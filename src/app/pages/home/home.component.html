@@ -1,31 +1,127 @@
-<div class="min-h-screen w-full bg-gray-50 relative">
+<div class="min-h-screen w-full bg-slate-50 relative font-nunito flex flex-col">
   <!-- Navbar Pública Flotante -->
-  <nav class="fixed top-6 left-1/2 -translate-x-1/2 w-[90%] max-w-6xl bg-white shadow-lg rounded-full px-8 py-4 flex justify-between items-center z-50 border border-gray-100">
+  <nav class="fixed top-6 left-1/2 -translate-x-1/2 w-[90%] max-w-6xl bg-white/90 backdrop-blur-md shadow-sm rounded-full px-8 py-4 flex justify-between items-center z-50 border border-gray-100">
     <!-- Logo -->
-    <div class="font-extrabold text-2xl text-gray-800">
+    <div class="font-extrabold text-2xl text-sky-400 flex items-center gap-2">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-orange-400" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2L2 12h3v8h14v-8h3L12 2zm0 2.83l5 5V18H7v-8.17l5-5z"/><circle cx="9" cy="13" r="1.5"/><circle cx="15" cy="13" r="1.5"/><circle cx="12" cy="16" r="1.5"/></svg>
       PetHouse
     </div>
     
-    <!-- Secciones ficticias -->
-    <ul class="hidden md:flex space-x-8 font-semibold text-gray-500">
-      <li class="hover:text-gray-900 cursor-pointer transition-colors">Inicio</li>
-      <li class="hover:text-gray-900 cursor-pointer transition-colors">Servicios</li>
-      <li class="hover:text-gray-900 cursor-pointer transition-colors">Productos</li>
-      <li class="hover:text-gray-900 cursor-pointer transition-colors">Nosotros</li>
+    <!-- Secciones -->
+    <ul class="hidden md:flex space-x-8 font-bold text-gray-600">
+      <li class="hover:text-orange-400 cursor-pointer transition-colors">Inicio</li>
+      <li class="hover:text-orange-400 cursor-pointer transition-colors">Servicios</li>
+      <li class="hover:text-orange-400 cursor-pointer transition-colors">Productos</li>
+      <li class="hover:text-orange-400 cursor-pointer transition-colors">Nosotros</li>
     </ul>
 
     <!-- Botón Login -->
     <div>
-      <a routerLink="/dashboard" class="bg-gray-800 text-white px-6 py-2 rounded-full font-bold hover:bg-black transition-colors shadow-md">
+      <a routerLink="/dashboard" class="bg-orange-400 text-white px-6 py-2.5 rounded-full font-extrabold hover:bg-orange-500 hover:shadow-lg hover:shadow-orange-400/30 transition-all duration-300">
         Ingresar
       </a>
     </div>
   </nav>
 
-  <!-- Contenido Principal Landing -->
-  <div class="pt-32 p-8 flex flex-col items-center justify-center min-h-[80vh]">
-    <div class="w-full h-96 border-dashed border-2 border-gray-400 flex items-center justify-center rounded-3xl bg-white">
-      <p class="font-bold text-gray-500 text-xl">[ Acá va el contenido de la Landing Page ]</p>
+  <!-- Hero Section -->
+  <section class="pt-36 pb-20 px-8 flex-1 flex flex-col items-center justify-center relative overflow-hidden">
+    <!-- Fondo decorativo suave -->
+    <div class="absolute top-0 right-0 -mr-20 -mt-20 w-96 h-96 bg-sky-400/10 rounded-full blur-3xl -z-10"></div>
+    <div class="absolute bottom-0 left-0 -ml-20 -mb-20 w-80 h-80 bg-orange-400/10 rounded-full blur-3xl -z-10"></div>
+
+    <div class="max-w-6xl w-full grid grid-cols-1 md:grid-cols-2 gap-12 items-center z-10">
+      
+      <!-- Columna Izquierda: Textos -->
+      <div class="flex flex-col items-start text-left space-y-6">
+        <div class="inline-block bg-sky-100 text-sky-600 font-bold px-4 py-1.5 rounded-full text-sm mb-2">
+          🐾 La mejor tienda y clínica veterinaria
+        </div>
+        <h1 class="text-5xl md:text-6xl font-extrabold text-gray-800 leading-tight">
+          Todo lo que tu mascota necesita, <br>
+          <span class="text-orange-400">en un solo lugar</span>
+        </h1>
+        <p class="text-lg text-gray-600 font-medium max-w-lg">
+          En PetHouse cuidamos a tus mejores amigos como si fueran nuestros. Ofrecemos los mejores alimentos, accesorios divertidos y atención veterinaria de primer nivel.
+        </p>
+        <div class="flex flex-wrap gap-4 pt-4">
+          <button class="bg-sky-400 text-white px-8 py-3 rounded-full font-bold text-lg hover:bg-sky-500 hover:shadow-lg hover:shadow-sky-400/40 transition-all duration-300">
+            Ver Productos
+          </button>
+          <button class="bg-white text-orange-400 border-2 border-orange-400 px-8 py-3 rounded-full font-bold text-lg hover:bg-orange-50 transition-colors">
+            Sacar Turno
+          </button>
+        </div>
+      </div>
+
+      <!-- Columna Derecha: Imagen -->
+      <div class="relative flex justify-center items-center">
+        <!-- Círculo de fondo para que la imagen resalte -->
+        <div class="absolute w-72 h-72 md:w-96 md:h-96 bg-sky-200 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob"></div>
+        <div class="absolute w-72 h-72 md:w-96 md:h-96 bg-orange-200 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-2000 -bottom-8 left-10"></div>
+        
+        <!-- Recuadro para la imagen -->
+        <div class="relative w-full max-w-md aspect-square bg-slate-200 rounded-3xl border-4 border-white shadow-2xl flex flex-col items-center justify-center overflow-hidden">
+          
+          <!-- TODO: Reemplazar src con la imagen que elijas y quitar el texto p-4 -->
+          <img src="assets/images/hero-pet.png" alt="Mascota feliz" class="object-cover w-full h-full absolute inset-0 z-10" onerror="this.style.display='none'">
+          
+          <!-- Texto que se muestra mientras no haya imagen -->
+          <div class="text-center p-6 text-gray-500 z-0">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto mb-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+            <p class="font-bold text-lg">Acá va la foto del Perro/Gato</p>
+            <p class="text-sm">Guarda tu imagen en:<br><code class="text-sky-500 bg-sky-50 px-2 py-1 rounded">public/assets/images/hero-pet.png</code></p>
+          </div>
+        </div>
+      </div>
     </div>
-  </div>
+  </section>
+
+  <!-- Sección de Categorías -->
+  <section class="bg-white py-20 px-8">
+    <div class="max-w-6xl mx-auto">
+      <h2 class="text-3xl font-extrabold text-center text-gray-800 mb-12">Nuestros Servicios Principales</h2>
+      
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <!-- Card 1 -->
+        <div class="bg-slate-50 rounded-3xl p-8 text-center hover:-translate-y-2 transition-transform duration-300 border border-slate-100 hover:shadow-xl hover:shadow-sky-100 cursor-pointer">
+          <div class="w-20 h-20 bg-sky-100 text-sky-500 rounded-full flex items-center justify-center mx-auto mb-6">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+          </div>
+          <h3 class="text-xl font-bold text-gray-800 mb-3">Tienda de Alimentos</h3>
+          <p class="text-gray-500">Las mejores marcas para que crezcan fuertes y sanos.</p>
+        </div>
+        
+        <!-- Card 2 -->
+        <div class="bg-slate-50 rounded-3xl p-8 text-center hover:-translate-y-2 transition-transform duration-300 border border-slate-100 hover:shadow-xl hover:shadow-orange-100 cursor-pointer">
+          <div class="w-20 h-20 bg-orange-100 text-orange-500 rounded-full flex items-center justify-center mx-auto mb-6">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
+          </div>
+          <h3 class="text-xl font-bold text-gray-800 mb-3">Accesorios y Juguetes</h3>
+          <p class="text-gray-500">Todo para la diversión y el confort de tus mascotas.</p>
+        </div>
+        
+        <!-- Card 3 -->
+        <div class="bg-slate-50 rounded-3xl p-8 text-center hover:-translate-y-2 transition-transform duration-300 border border-slate-100 hover:shadow-xl hover:shadow-sky-100 cursor-pointer">
+          <div class="w-20 h-20 bg-sky-100 text-sky-500 rounded-full flex items-center justify-center mx-auto mb-6">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+          </div>
+          <h3 class="text-xl font-bold text-gray-800 mb-3">Clínica Veterinaria</h3>
+          <p class="text-gray-500">Especialistas listos para atender cualquier urgencia o control.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer Básico -->
+  <footer class="bg-gray-800 text-white py-12 px-8">
+    <div class="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center">
+      <div class="mb-4 md:mb-0">
+        <h2 class="text-2xl font-extrabold text-sky-400">PetHouse</h2>
+        <p class="text-gray-400 mt-2">Dedicados al cuidado animal.</p>
+      </div>
+      <div class="text-gray-400 text-sm">
+        &copy; 2026 Equipo 4 - Proyecto Integrador. Todos los derechos reservados.
+      </div>
+    </div>
+  </footer>
 </div>
