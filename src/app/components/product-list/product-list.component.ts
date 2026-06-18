@@ -16,8 +16,16 @@ export class ProductListComponent implements OnInit {
   private fb = inject(FormBuilder);
 
   products: Product[] = [];
+  
+  // Modal Crear/Editar
   isModalOpen = false;
+  isEditMode = false;
+  editingProductId: number | null = null;
   productForm: FormGroup;
+
+  // Modal Eliminar
+  isDeleteModalOpen = false;
+  productToDelete: Product | null = null;
 
   constructor() {
     this.productForm = this.fb.group({
@@ -41,23 +49,74 @@ export class ProductListComponent implements OnInit {
   }
 
   openModal() {
+    this.isEditMode = false;
+    this.editingProductId = null;
+    this.productForm.reset({ precio: 0, stock: 0 });
+    this.isModalOpen = true;
+  }
+
+  openEditModal(product: Product) {
+    this.isEditMode = true;
+    this.editingProductId = product.id!;
+    this.productForm.patchValue({
+      nombre: product.nombre,
+      codigo: product.codigo,
+      descripcion: product.descripcion,
+      precio: product.precio,
+      stock: product.stock
+    });
     this.isModalOpen = true;
   }
 
   closeModal() {
     this.isModalOpen = false;
+    this.isEditMode = false;
+    this.editingProductId = null;
     this.productForm.reset({ precio: 0, stock: 0 });
+  }
+
+  openDeleteModal(product: Product) {
+    this.productToDelete = product;
+    this.isDeleteModalOpen = true;
+  }
+
+  closeDeleteModal() {
+    this.isDeleteModalOpen = false;
+    this.productToDelete = null;
+  }
+
+  confirmDelete() {
+    if (this.productToDelete && this.productToDelete.id) {
+      this.productService.deleteProduct(this.productToDelete.id).subscribe({
+        next: () => {
+          this.products = this.products.filter(p => p.id !== this.productToDelete!.id);
+          this.closeDeleteModal();
+        },
+        error: (err) => console.error('Error al eliminar producto', err)
+      });
+    }
   }
 
   onSubmit() {
     if (this.productForm.valid) {
-      this.productService.createProduct(this.productForm.value).subscribe({
-        next: (newProduct) => {
-          this.products.push(newProduct);
-          this.closeModal();
-        },
-        error: (err) => console.error('Error creating product', err)
-      });
+      if (this.isEditMode && this.editingProductId) {
+        this.productService.updateProduct(this.editingProductId, this.productForm.value).subscribe({
+          next: (updatedProduct) => {
+            const index = this.products.findIndex(p => p.id === this.editingProductId);
+            if (index !== -1) this.products[index] = updatedProduct;
+            this.closeModal();
+          },
+          error: (err) => console.error('Error actualizando producto', err)
+        });
+      } else {
+        this.productService.createProduct(this.productForm.value).subscribe({
+          next: (newProduct) => {
+            this.products.push(newProduct);
+            this.closeModal();
+          },
+          error: (err) => console.error('Error creando producto', err)
+        });
+      }
     }
   }
 }
