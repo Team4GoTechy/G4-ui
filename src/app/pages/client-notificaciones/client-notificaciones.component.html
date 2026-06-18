@@ -1,0 +1,31 @@
+<div class="h-full bg-slate-50 p-8 rounded-2xl border border-gray-100 flex flex-col font-nunito overflow-y-auto">
+  <div class="mb-8">
+    <h1 class="text-3xl font-extrabold text-gray-800">Notificaciones</h1>
+    <p class="text-gray-500">Avisos y mensajes importantes sobre tus servicios.</p>
+  </div>
+
+  <div class="space-y-4 max-w-3xl">
+    <div *ngFor="let notif of notificaciones" 
+         (click)="marcarLeido(notif)"
+         class="bg-white p-5 rounded-2xl shadow-sm border cursor-pointer transition-all flex items-start gap-4"
+         [ngClass]="notif.leido ? 'border-gray-100 opacity-70' : 'border-sky-200 border-l-4 border-l-sky-500 hover:shadow-md'">
+      
+      <div class="p-3 rounded-full shrink-0"
+           [ngClass]="notif.tipo === 'whatsapp' ? 'bg-green-100 text-green-500' : notif.tipo === 'email' ? 'bg-orange-100 text-orange-500' : 'bg-sky-100 text-sky-500'">
+        <svg *ngIf="notif.tipo === 'whatsapp'" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+        <svg *ngIf="notif.tipo === 'email'" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+        <svg *ngIf="notif.tipo === 'sistema'" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      </div>
+
+      <div class="flex-1">
+        <div class="flex justify-between items-center mb-1">
+          <h3 class="font-bold text-gray-800" [ngClass]="!notif.leido ? 'text-sky-700' : ''">{{ notif.titulo }}</h3>
+          <span class="text-xs font-bold text-gray-400">{{ notif.fecha }}</span>
+        </div>
+        <p class="text-sm text-gray-600">{{ notif.mensaje }}</p>
+      </div>
+      
+      <div *ngIf="!notif.leido" class="w-3 h-3 bg-sky-500 rounded-full mt-2"></div>
+    </div>
+  </div>
+</div>

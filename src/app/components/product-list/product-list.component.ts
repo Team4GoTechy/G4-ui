@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { ProductService } from '../../services/product.service';
+import { AuthService } from '../../services/auth.service';
 import { Product } from '../../models/product.model';
 
 @Component({
@@ -13,19 +14,18 @@ import { Product } from '../../models/product.model';
 })
 export class ProductListComponent implements OnInit {
   private productService = inject(ProductService);
+  private authService = inject(AuthService);
   private fb = inject(FormBuilder);
+
+  user$ = this.authService.currentUser$;
 
   products: Product[] = [];
   
-  // Modal Crear/Editar
-  isModalOpen = false;
-  isEditMode = false;
-  editingProductId: number | null = null;
+  // Carrito de Compras
+  cart: { product: Product, quantity: number }[] = [];
+  isCartOpen = false;
+  isCheckoutModalOpen = false;
   productForm: FormGroup;
-
-  // Modal Eliminar
-  isDeleteModalOpen = false;
-  productToDelete: Product | null = null;
 
   constructor() {
     this.productForm = this.fb.group({
@@ -38,85 +38,60 @@ export class ProductListComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.loadProducts();
+    // Datos simulados (Mock) para ver la UI
+    this.products = [
+      { id: 1, nombre: 'Alimento Royal Canin Gatos', codigo: 'CAT-01', descripcion: 'Alimento premium para gatos adultos', precio: 25000, stock: 15, categoria: 'Gato' },
+      { id: 2, nombre: 'Rascador Torre de 3 Pisos', codigo: 'CAT-02', descripcion: 'Rascador con cucha y juguetes colgantes', precio: 45000, stock: 5, categoria: 'Gato' },
+      { id: 3, nombre: 'Piedras Sanitarias Aglomerantes', codigo: 'CAT-03', descripcion: 'Bolsa de 10kg sin olor', precio: 12000, stock: 30, categoria: 'Gato' },
+      { id: 4, nombre: 'Alimento ProPlan Perros Raza Mediana', codigo: 'DOG-01', descripcion: 'Alimento super premium 15kg', precio: 32000, stock: 10, categoria: 'Perro' },
+      { id: 5, nombre: 'Correa Extensible 5m', codigo: 'DOG-02', descripcion: 'Correa resistente hasta 25kg', precio: 15000, stock: 20, categoria: 'Perro' },
+      { id: 6, nombre: 'Cama Acolchada Extra Grande', codigo: 'DOG-03', descripcion: 'Cama lavable para perros grandes', precio: 28000, stock: 8, categoria: 'Perro' }
+    ];
   }
 
-  loadProducts() {
-    this.productService.getProducts().subscribe({
-      next: (data) => this.products = data,
-      error: (err) => console.error('Error fetching products', err)
-    });
-  }
-
-  openModal() {
-    this.isEditMode = false;
-    this.editingProductId = null;
-    this.productForm.reset({ precio: 0, stock: 0 });
-    this.isModalOpen = true;
-  }
-
-  openEditModal(product: Product) {
-    this.isEditMode = true;
-    this.editingProductId = product.id!;
-    this.productForm.patchValue({
-      nombre: product.nombre,
-      codigo: product.codigo,
-      descripcion: product.descripcion,
-      precio: product.precio,
-      stock: product.stock
-    });
-    this.isModalOpen = true;
-  }
-
-  closeModal() {
-    this.isModalOpen = false;
-    this.isEditMode = false;
-    this.editingProductId = null;
-    this.productForm.reset({ precio: 0, stock: 0 });
-  }
-
-  openDeleteModal(product: Product) {
-    this.productToDelete = product;
-    this.isDeleteModalOpen = true;
-  }
-
-  closeDeleteModal() {
-    this.isDeleteModalOpen = false;
-    this.productToDelete = null;
-  }
-
-  confirmDelete() {
-    if (this.productToDelete && this.productToDelete.id) {
-      this.productService.deleteProduct(this.productToDelete.id).subscribe({
-        next: () => {
-          this.products = this.products.filter(p => p.id !== this.productToDelete!.id);
-          this.closeDeleteModal();
-        },
-        error: (err) => console.error('Error al eliminar producto', err)
-      });
-    }
-  }
-
-  onSubmit() {
-    if (this.productForm.valid) {
-      if (this.isEditMode && this.editingProductId) {
-        this.productService.updateProduct(this.editingProductId, this.productForm.value).subscribe({
-          next: (updatedProduct) => {
-            const index = this.products.findIndex(p => p.id === this.editingProductId);
-            if (index !== -1) this.products[index] = updatedProduct;
-            this.closeModal();
-          },
-          error: (err) => console.error('Error actualizando producto', err)
-        });
+  // Lógica del Carrito
+  addToCart(product: Product) {
+    if (product.stock > 0) {
+      const item = this.cart.find(i => i.product.id === product.id);
+      if (item) {
+        if (item.quantity < product.stock) {
+          item.quantity++;
+        }
       } else {
-        this.productService.createProduct(this.productForm.value).subscribe({
-          next: (newProduct) => {
-            this.products.push(newProduct);
-            this.closeModal();
-          },
-          error: (err) => console.error('Error creando producto', err)
-        });
+        this.cart.push({ product, quantity: 1 });
       }
     }
+  }
+
+  removeFromCart(productId: number) {
+    this.cart = this.cart.filter(i => i.product.id !== productId);
+  }
+
+  get cartTotal() {
+    return this.cart.reduce((total, item) => total + (item.product.precio * item.quantity), 0);
+  }
+
+  get cartItemsCount() {
+    return this.cart.reduce((count, item) => count + item.quantity, 0);
+  }
+
+  toggleCart() {
+    this.isCartOpen = !this.isCartOpen;
+  }
+
+  openCheckout() {
+    this.isCartOpen = false;
+    this.isCheckoutModalOpen = true;
+  }
+
+  closeCheckout() {
+    this.isCheckoutModalOpen = false;
+  }
+
+  processPayment(method: 'efectivo' | 'transferencia') {
+    // Simular el pago
+    alert(`Pago procesado con ${method}. Total: $${this.cartTotal}`);
+    this.cart = [];
+    this.isCheckoutModalOpen = false;
   }
 }
