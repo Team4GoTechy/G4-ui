@@ -7,7 +7,9 @@ export interface User {
   celular: string;
   email: string;
   password?: string;
-  tipoMascota: 'Perro' | 'Gato' | string;
-  nombreMascota: string;
+  rol?: 'CLIENT' | 'ADMIN' | 'DOCTOR';
+  avatar?: string;
+  tipoMascota?: 'Perro' | 'Gato' | string;
+  nombreMascota?: string;
   cantidadMascotas?: number;
 }

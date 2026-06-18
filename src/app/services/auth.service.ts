@@ -1,24 +1,52 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable, of } from 'rxjs';
+import { BehaviorSubject, Observable } from 'rxjs';
 import { User } from '../models/user.model';
-import { delay } from 'rxjs/operators';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
-  // Simulamos al usuario mockeado en memoria
-  private mockUser: User = {
-    id: 1,
-    nombre: 'Mauricio',
-    apellido: 'Heredia',
-    direccion: 'Barrio Republica Argentina',
-    celular: '3705022130',
-    email: 'usuario@gmail.com',
-    password: '12345678',
-    tipoMascota: 'Gato',
-    nombreMascota: 'Dandi'
-  };
+  // Base de datos de usuarios en memoria
+  private mockUsers: User[] = [
+    {
+      id: 1,
+      email: 'maurih46322945@gmail.com',
+      password: 'password123',
+      nombre: 'Mauricio',
+      apellido: 'Heredia',
+      tipoMascota: 'Gato',
+      cantidadMascotas: 1,
+      celular: '3705022130',
+      direccion: 'Barrio Republica Argentina',
+      rol: 'CLIENT'
+    },
+    {
+      id: 2,
+      email: 'admin@gmail.com',
+      password: '12345678',
+      nombre: 'Jefe',
+      apellido: 'Admin',
+      avatar: 'señor.jpg',
+      celular: '11111111',
+      direccion: 'Clínica Principal',
+      rol: 'ADMIN',
+      tipoMascota: '',
+      nombreMascota: ''
+    },
+    {
+      id: 3,
+      email: 'doctor@gmail.com',
+      password: '12345678',
+      nombre: 'Dr. Vet',
+      apellido: 'Peludo',
+      avatar: 'chico.jpg',
+      celular: '22222222',
+      direccion: 'Consultorio 1',
+      rol: 'DOCTOR',
+      tipoMascota: '',
+      nombreMascota: ''
+    }
+  ];
 
   private currentUserSubject = new BehaviorSubject<User | null>(null);
   public currentUser$ = this.currentUserSubject.asObservable();
@@ -26,11 +54,11 @@ export class AuthService {
   constructor() {}
 
   login(email: string, password: string): Observable<boolean> {
-    // Simulamos un delay de red de 1 segundo
     return new Observable(subscriber => {
       setTimeout(() => {
-        if (email === this.mockUser.email && password === this.mockUser.password) {
-          this.currentUserSubject.next(this.mockUser);
+        const foundUser = this.mockUsers.find(u => u.email === email && u.password === password);
+        if (foundUser) {
+          this.currentUserSubject.next(foundUser);
           subscriber.next(true);
         } else {
           subscriber.next(false);
@@ -44,8 +72,9 @@ export class AuthService {
     return new Observable(subscriber => {
       setTimeout(() => {
         // En una app real, acá haríamos POST. Por ahora simulamos que se guarda y se autologuea
-        this.mockUser = { ...user, id: 2 }; 
-        this.currentUserSubject.next(this.mockUser);
+        const newUser = { ...user, id: this.mockUsers.length + 1, rol: 'CLIENT' as const };
+        this.mockUsers.push(newUser);
+        this.currentUserSubject.next(newUser);
         subscriber.next(true);
         subscriber.complete();
       }, 1000);

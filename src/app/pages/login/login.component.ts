@@ -30,14 +30,23 @@ export class LoginComponent {
     if (this.loginForm.valid) {
       this.isLoading = true;
       this.errorMessage = '';
+      
       const { email, password } = this.loginForm.value;
       
       this.authService.login(email, password).subscribe(success => {
         this.isLoading = false;
+        
         if (success) {
-          this.router.navigate(['/cliente']);
+          const user = this.authService.getCurrentUser();
+          if (user?.rol === 'ADMIN') {
+            this.router.navigate(['/admin']);
+          } else if (user?.rol === 'DOCTOR') {
+            this.router.navigate(['/doctor']);
+          } else {
+            this.router.navigate(['/cliente']);
+          }
         } else {
-          this.errorMessage = 'Credenciales incorrectas. Intente nuevamente.';
+          this.errorMessage = 'Credenciales incorrectas. Para esta prueba usa admin@gmail.com o doctor@gmail.com con clave 12345678';
         }
       });
     }

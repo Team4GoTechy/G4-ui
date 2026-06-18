@@ -9,6 +9,19 @@ import { ClientMascotaComponent } from './pages/client-mascota/client-mascota.co
 import { ClientTurnosComponent } from './pages/client-turnos/client-turnos.component';
 import { ClientHistorialComponent } from './pages/client-historial/client-historial.component';
 import { ClientNotificacionesComponent } from './pages/client-notificaciones/client-notificaciones.component';
+import { AdminLayoutComponent } from './components/layouts/admin-layout/admin-layout.component';
+import { AdminHomeComponent } from './pages/admin-home/admin-home.component';
+import { DoctorLayoutComponent } from './components/layouts/doctor-layout/doctor-layout.component';
+import { DoctorHomeComponent } from './pages/doctor-home/doctor-home.component';
+import { AdminProductosComponent } from './pages/admin-productos/admin-productos.component';
+import { AdminServiciosComponent } from './pages/admin-servicios/admin-servicios.component';
+import { AdminVeterinariosComponent } from './pages/admin-veterinarios/admin-veterinarios.component';
+import { AdminClientesComponent } from './pages/admin-clientes/admin-clientes.component';
+import { AdminSolicitudesComponent } from './pages/admin-solicitudes/admin-solicitudes.component';
+import { DoctorHistoriasComponent } from './pages/doctor-historias/doctor-historias.component';
+import { DoctorVacunacionComponent } from './pages/doctor-vacunacion/doctor-vacunacion.component';
+import { DoctorInventarioComponent } from './pages/doctor-inventario/doctor-inventario.component';
+import { DoctorSolicitudesComponent } from './pages/doctor-solicitudes/doctor-solicitudes.component';
 
 export const routes: Routes = [
   { 
@@ -27,31 +40,35 @@ export const routes: Routes = [
     path: 'cliente', 
     component: DashboardLayoutComponent,
     children: [
-      {
-        path: '',
-        component: ClientHomeComponent,
-        pathMatch: 'full'
-      },
-      {
-        path: 'productos',
-        component: ProductListComponent
-      },
-      {
-        path: 'mascota',
-        component: ClientMascotaComponent
-      },
-      {
-        path: 'turnos',
-        component: ClientTurnosComponent
-      },
-      {
-        path: 'historial',
-        component: ClientHistorialComponent
-      },
-      {
-        path: 'notificaciones',
-        component: ClientNotificacionesComponent
-      }
+      { path: '', component: ClientHomeComponent, pathMatch: 'full' },
+      { path: 'productos', component: ProductListComponent },
+      { path: 'mascota', component: ClientMascotaComponent },
+      { path: 'turnos', component: ClientTurnosComponent },
+      { path: 'historial', component: ClientHistorialComponent },
+      { path: 'notificaciones', component: ClientNotificacionesComponent }
+    ]
+  },
+  {
+    path: 'admin',
+    component: AdminLayoutComponent,
+    children: [
+      { path: '', component: AdminHomeComponent, pathMatch: 'full' },
+      { path: 'productos', component: AdminProductosComponent },
+      { path: 'servicios', component: AdminServiciosComponent },
+      { path: 'veterinarios', component: AdminVeterinariosComponent },
+      { path: 'clientes', component: AdminClientesComponent },
+      { path: 'solicitudes', component: AdminSolicitudesComponent }
+    ]
+  },
+  {
+    path: 'doctor',
+    component: DoctorLayoutComponent,
+    children: [
+      { path: '', component: DoctorHomeComponent, pathMatch: 'full' },
+      { path: 'historias', component: DoctorHistoriasComponent },
+      { path: 'vacunacion', component: DoctorVacunacionComponent },
+      { path: 'inventario', component: DoctorInventarioComponent },
+      { path: 'solicitudes', component: DoctorSolicitudesComponent }
     ]
   },
   { path: '**', redirectTo: '' }
