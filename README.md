@@ -1,27 +1,49 @@
-# Pethouse
+# 🐾 PetHouse - Frontend (Equipo 4)
 
-This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 18.2.21.
+Este es el proyecto frontend del Sistema de Ventas para mascotas, desarrollado con **Angular 18** y **TailwindCSS**. 
 
-## Development server
+Este repositorio forma parte del Proyecto Integrador 2 (GoTechy).
 
-Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The application will automatically reload if you change any of the source files.
+## 🚀 Requisitos Previos
 
-## Code scaffolding
+Antes de ejecutar este proyecto, asegúrate de tener instalado en tu computadora:
+- [Node.js](https://nodejs.org/) (Versión 18 o superior recomendada)
+- Angular CLI (Puedes instalarlo globalmente ejecutando `npm install -g @angular/cli`)
 
-Run `ng generate component component-name` to generate a new component. You can also use `ng generate directive|pipe|service|class|guard|interface|enum|module`.
+## 🛠️ Instalación
 
-## Build
+Para descargar todas las dependencias necesarias del proyecto, abre una terminal en la raíz de esta carpeta y ejecuta:
 
-Run `ng build` to build the project. The build artifacts will be stored in the `dist/` directory.
+```bash
+npm install
+```
 
-## Running unit tests
+## ▶️ Ejecutar el Proyecto
 
-Run `ng test` to execute the unit tests via [Karma](https://karma-runner.github.io).
+Una vez instaladas las dependencias, puedes levantar el servidor de desarrollo ejecutando:
 
-## Running end-to-end tests
+```bash
+npm start
+```
+*(Alternativamente puedes usar `ng serve`)*
 
-Run `ng e2e` to execute the end-to-end tests via a platform of your choice. To use this command, you need to first add a package that implements end-to-end testing capabilities.
+**El frontend estará corriendo y disponible en:**
+👉 **`http://localhost:4200/`**
 
-## Further help
+La aplicación se recargará automáticamente si realizas cambios en los archivos fuente.
 
-To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+## 🔌 Conexión con el Backend
+
+El frontend está configurado mediante `HttpClient` para comunicarse con la API del backend (Microservicio de Spring Boot). 
+Por defecto, el frontend enviará las peticiones HTTP (GET, POST, etc.) hacia:
+
+👉 **`http://localhost:8080/`**
+
+> **Importante para el equipo Backend:** 
+> Asegúrense de tener el servidor Spring Boot corriendo en el puerto `8080` y de tener configurados los **CORS** (`@CrossOrigin(origins = "http://localhost:4200")`) en sus Controladores para evitar bloqueos de seguridad en el navegador al probar los endpoints desde aquí.
+
+## 📁 Estructura Principal
+
+- `src/app/pages/home`: Contiene la Landing Page pública.
+- `src/app/components/product-list`: Contiene la tabla administrativa y el Modal para probar la creación y listado de productos.
+- `src/app/services`: Contiene los servicios encargados de la comunicación HTTP con el backend.
