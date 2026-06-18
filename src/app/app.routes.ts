@@ -8,13 +8,13 @@ export const routes: Routes = [
     path: '', 
     component: HomeComponent 
   },
+  {
+    path: 'productos',
+    component: ProductListComponent
+  },
   { 
     path: 'dashboard', 
-    component: DashboardLayoutComponent,
-    children: [
-      { path: 'products', component: ProductListComponent },
-      { path: '', redirectTo: 'products', pathMatch: 'full' }
-    ]
+    component: DashboardLayoutComponent
   },
   { path: '**', redirectTo: '' }
 ];
