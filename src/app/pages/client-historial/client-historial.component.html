@@ -4,25 +4,48 @@
     <p class="text-gray-500">Registro de tus compras anteriores en la tienda.</p>
   </div>
 
-  <div class="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
+  <!-- Loading state -->
+  <div *ngIf="isLoading" class="flex flex-col items-center justify-center py-20 text-gray-400 gap-2">
+    <div class="w-10 h-10 border-4 border-sky-500 border-t-transparent rounded-full animate-spin"></div>
+    <span class="font-bold text-sm">Cargando historial...</span>
+  </div>
+
+  <!-- Tabla de Compras -->
+  <div *ngIf="!isLoading" class="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
     <table class="min-w-full divide-y divide-gray-200">
       <thead class="bg-sky-50">
         <tr>
           <th class="px-6 py-4 text-left text-xs font-bold text-sky-700 uppercase">Fecha</th>
           <th class="px-6 py-4 text-left text-xs font-bold text-sky-700 uppercase">Productos</th>
+          <th class="px-6 py-4 text-left text-xs font-bold text-sky-700 uppercase">Total</th>
           <th class="px-6 py-4 text-left text-xs font-bold text-sky-700 uppercase">Método Pago</th>
           <th class="px-6 py-4 text-left text-xs font-bold text-sky-700 uppercase">Estado</th>
         </tr>
       </thead>
       <tbody class="bg-white divide-y divide-gray-100">
         <tr *ngFor="let compra of compras" class="hover:bg-gray-50 transition-colors">
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-bold">{{ compra.fecha }}</td>
-          <td class="px-6 py-4 text-sm font-bold text-gray-800">{{ compra.productos }}</td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ compra.pago }}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-bold">
+            {{ compra.fecha | date:'dd/MM/yyyy HH:mm' }}
+          </td>
+          <td class="px-6 py-4 text-sm font-bold text-gray-800">
+            {{ getProductNames(compra) }}
+          </td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm font-extrabold text-sky-600">
+            {{ compra.total | currency }}
+          </td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+            {{ formatPago(compra.metodoPago) }}
+          </td>
           <td class="px-6 py-4 whitespace-nowrap">
-            <span class="px-3 py-1 inline-flex text-xs leading-5 font-bold rounded-full" [ngClass]="compra.color">
-              {{ compra.estado }}
+            <span class="px-3 py-1 inline-flex text-xs leading-5 font-bold rounded-full" [ngClass]="getEstadoClass(compra.estado)">
+              {{ compra.estado || 'PROCESANDO' }}
             </span>
+          </td>
+        </tr>
+        <tr *ngIf="compras.length === 0">
+          <td colspan="5" class="p-10 text-center text-gray-400 font-bold">
+            <span class="text-4xl block mb-2">🛍️</span>
+            No has realizado ninguna compra todavía.
           </td>
         </tr>
       </tbody>

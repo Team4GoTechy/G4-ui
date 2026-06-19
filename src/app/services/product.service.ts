@@ -10,8 +10,9 @@ export class ProductService {
   private http = inject(HttpClient);
   private apiUrl = 'http://localhost:8080/productos';
 
-  getProducts(): Observable<Product[]> {
-    return this.http.get<Product[]>(this.apiUrl);
+  getProducts(categoriaId?: number): Observable<Product[]> {
+    const url = categoriaId ? `${this.apiUrl}?categoriaId=${categoriaId}` : this.apiUrl;
+    return this.http.get<Product[]>(url);
   }
 
   createProduct(product: Product): Observable<Product> {
@@ -24,5 +25,31 @@ export class ProductService {
 
   deleteProduct(id: number): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${id}`);
+  }
+
+  getCategories(): Observable<any[]> {
+    return this.http.get<any[]>('http://localhost:8080/categorias');
+  }
+
+  createCategory(category: any): Observable<any> {
+    return this.http.post<any>('http://localhost:8080/categorias', category);
+  }
+
+  deleteCategory(id: number): Observable<void> {
+    return this.http.delete<void>(`http://localhost:8080/categorias/${id}`);
+  }
+
+  createPurchase(purchase: any): Observable<any> {
+    return this.http.post<any>('http://localhost:8080/compras', purchase);
+  }
+
+  getPurchaseHistory(): Observable<any[]> {
+    return this.http.get<any[]>('http://localhost:8080/compras');
+  }
+
+  uploadProductImage(file: File): Observable<any> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http.post<any>('http://localhost:8080/upload/producto', formData);
   }
 }

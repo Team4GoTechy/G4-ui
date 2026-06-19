@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, FormArray } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
+import { toast } from 'ngx-sonner';
 
 @Component({
   selector: 'app-register',
@@ -18,112 +19,90 @@ export class RegisterComponent implements OnInit {
   registerForm!: FormGroup;
   isLoading = false;
   currentStep = 1;
-
-  avatars = ['chica.jpg', 'chico.jpg', 'señor.jpg'];
+  avatars = [
+    '/assets/images/avatars/chico.jpg',
+    '/assets/images/avatars/chica.jpg',
+    '/assets/images/avatars/señor.jpg'
+  ];
 
   ngOnInit() {
     this.registerForm = this.fb.group({
-      // Datos Personales
-      avatar: ['chico.jpg', Validators.required],
       nombre: ['', Validators.required],
       apellido: ['', Validators.required],
-      edad: ['', [Validators.required, Validators.min(18)]],
+      edad: ['', [Validators.required, Validators.min(1)]],
+      avatar: [this.avatars[0]],
       direccion: ['', Validators.required],
       celular: ['', Validators.required],
       email: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required, Validators.minLength(8)]],
-      
-      // Datos de Mascota
-      cantidadMascotas: [1, [Validators.required, Validators.min(1)]],
-      mascotas: this.fb.array([this.createMascotaGroup()]),
-      
-      // Lógica de Familia
-      familyName: ['']
+      cantidadMascotas: [1, [Validators.required, Validators.min(0)]],
+      familyName: [''],
+      mascotas: this.fb.array([])
     });
 
-    // Detectar cambios en la cantidad de mascotas
-    this.registerForm.get('cantidadMascotas')?.valueChanges.subscribe(val => {
-      this.updateMascotasArray(val);
-    });
-
-    // Detectar cambios en el array de mascotas para auto-nombrar la familia
-    this.mascotasArray.valueChanges.subscribe(() => {
-      this.evaluateFamilyName();
-    });
+    // Inicializar con una mascota por defecto
+    this.addMascota();
   }
 
-  get mascotasArray(): FormArray {
+  get mascotasArray() {
     return this.registerForm.get('mascotas') as FormArray;
   }
 
-  createMascotaGroup(): FormGroup {
-    return this.fb.group({
-      tipo: ['', Validators.required],
+  addMascota() {
+    this.mascotasArray.push(this.fb.group({
       nombre: ['', Validators.required],
-      sexo: ['Macho', Validators.required]
-    });
+      sexo: ['Macho', Validators.required],
+      tipo: ['Perro', Validators.required]
+    }));
+    this.syncCantidadMascotas();
   }
 
-  updateMascotasArray(cantidad: number) {
-    if (!cantidad || cantidad < 1) return;
-    const currentLength = this.mascotasArray.length;
-    
-    if (cantidad > currentLength) {
-      for (let i = currentLength; i < cantidad; i++) {
-        this.mascotasArray.push(this.createMascotaGroup());
-      }
-    } else if (cantidad < currentLength) {
-      for (let i = currentLength - 1; i >= cantidad; i--) {
-        this.mascotasArray.removeAt(i);
-      }
+  removeMascota(index: number) {
+    if (this.mascotasArray.length > 0) {
+      this.mascotasArray.removeAt(index);
+      this.syncCantidadMascotas();
     }
-    this.evaluateFamilyName();
   }
 
-  evaluateFamilyName() {
-    const cantidad = this.registerForm.get('cantidadMascotas')?.value || 0;
-    if (cantidad > 2) {
-      const mascotas = this.mascotasArray.value;
-      const tipos = mascotas.map((m: any) => m.tipo).filter((t: string) => t !== '');
-      
-      if (tipos.length === cantidad) {
-        const todosPerros = tipos.every((t: string) => t === 'Perro');
-        const todosGatos = tipos.every((t: string) => t === 'Gato');
+  private syncCantidadMascotas() {
+    const cantidad = this.mascotasArray.length;
+    this.registerForm.get('cantidadMascotas')?.setValue(cantidad);
+    this.updateFamilyNameValidation(cantidad);
+  }
 
-        let familyName = 'Familia Mixta';
-        if (todosPerros) familyName = 'Familia Perruna';
-        else if (todosGatos) familyName = 'Familia Gatuna';
-
-        // Solo sobreescribe si el usuario no ha puesto un nombre personalizado, 
-        // o si queremos forzar el auto-nombre. Por ahora auto-nombramos si cambió la mezcla.
-        this.registerForm.patchValue({ familyName }, { emitEvent: false });
-      }
+  private updateFamilyNameValidation(cantidad: number) {
+    const familyNameControl = this.registerForm.get('familyName');
+    if (cantidad >= 3) {
+      familyNameControl?.setValidators([Validators.required]);
     } else {
-      this.registerForm.patchValue({ familyName: '' }, { emitEvent: false });
+      familyNameControl?.clearValidators();
     }
+    familyNameControl?.updateValueAndValidity();
   }
 
-  setAvatar(avatar: string) {
-    this.registerForm.patchValue({ avatar });
-  }
-
-  setMascotaTipo(index: number, tipo: string) {
-    this.mascotasArray.at(index).patchValue({ tipo });
+  selectAvatar(url: string) {
+    this.registerForm.patchValue({ avatar: url });
   }
 
   nextStep() {
-    // Validar manualmente campos del paso 1
-    const p1Controls = ['nombre', 'apellido', 'edad', 'direccion', 'celular', 'email', 'password'];
+    // Validar solo los campos del primer paso (datos personales)
+    const step1Fields = ['nombre', 'apellido', 'edad', 'direccion', 'celular', 'email', 'password'];
     let isValid = true;
-    for (let control of p1Controls) {
-      if (this.registerForm.get(control)?.invalid) {
-        this.registerForm.get(control)?.markAsTouched();
+    
+    for (const field of step1Fields) {
+      const control = this.registerForm.get(field);
+      control?.markAsTouched();
+      if (control?.invalid) {
         isValid = false;
       }
     }
-
+    
     if (isValid) {
       this.currentStep = 2;
+    } else {
+      toast.warning('Campos incompletos', {
+        description: 'Por favor completa todos tus datos personales antes de continuar.'
+      });
     }
   }
 
@@ -134,16 +113,29 @@ export class RegisterComponent implements OnInit {
   onSubmit() {
     if (this.registerForm.valid) {
       this.isLoading = true;
-      // Simulamos que el registro fue exitoso
-      setTimeout(() => {
-        // En una app real, aquí llamaríamos a un servicio para crear el usuario con su familia de mascotas.
-        // Para mock, simplemente iniciamos sesión con el email que puso
-        const email = this.registerForm.value.email;
-        this.authService.login(email, 'mockPassword123');
-        this.router.navigate(['/cliente']);
-      }, 1500);
+      
+      const registerData = this.registerForm.value;
+      
+      this.authService.register(registerData).subscribe({
+        next: () => {
+          this.isLoading = false;
+          toast.success('¡Registro Exitoso!', {
+            description: 'Tu cuenta y tus mascotas han sido registradas correctamente.'
+          });
+          this.router.navigate(['/cliente']);
+        },
+        error: (err) => {
+          this.isLoading = false;
+          toast.error('Error al registrarse', {
+            description: err.error?.message || 'Hubo un error en el registro. Verifica los datos.'
+          });
+        }
+      });
     } else {
       this.registerForm.markAllAsTouched();
+      toast.warning('Campos incompletos', {
+        description: 'Revisa que todos los campos de tus mascotas estén llenos.'
+      });
     }
   }
 }

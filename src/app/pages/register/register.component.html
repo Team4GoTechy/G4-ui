@@ -9,178 +9,256 @@
         </svg>
         PetHouse
       </a>
+      <p class="text-gray-500 font-bold mt-2">Únete a nuestra comunidad y cuida a tus mascotas</p>
     </div>
 
-    <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="bg-white rounded-3xl shadow-xl overflow-hidden border border-gray-100">
+    <!-- Indicador de pasos -->
+    <div class="flex justify-center items-center gap-4 mb-8">
+      <div class="flex items-center gap-2">
+        <div class="w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm transition-colors" [ngClass]="{'bg-sky-500 text-white': currentStep >= 1}">1</div>
+        <span class="text-sm font-bold" [ngClass]="{'text-sky-500': currentStep >= 1, 'text-gray-400': currentStep < 1}">Tus Datos</span>
+      </div>
+      <div class="w-12 h-1 bg-gray-200 rounded-full overflow-hidden">
+        <div class="h-full bg-sky-500 transition-all" [style.width]="currentStep === 2 ? '100%' : '0%'"></div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm transition-colors" [ngClass]="{'bg-sky-500 text-white': currentStep === 2, 'bg-gray-200 text-gray-500': currentStep === 1}">2</div>
+        <span class="text-sm font-bold" [ngClass]="{'text-sky-500': currentStep === 2, 'text-gray-400': currentStep === 1}">Tus Mascotas</span>
+      </div>
+    </div>
+
+    <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="bg-white rounded-3xl shadow-xl overflow-hidden border border-gray-100 p-8 animate-fade-in relative">
       
-      <!-- HEADER INDICADOR DE PASOS -->
-      <div class="bg-gradient-to-r from-sky-400 to-sky-500 p-6 text-white text-center relative flex justify-between items-center" 
-           [ngClass]="{'from-orange-400 to-orange-500': currentStep === 2}">
-        <div class="flex-1 text-left">
-          <h2 class="text-2xl font-extrabold">{{ currentStep === 1 ? '1. Identidad Personal' : '2. Identidad Peluda' }}</h2>
-          <p class="text-white/80 font-bold text-sm">Paso {{ currentStep }} de 2</p>
-        </div>
-        <div class="flex gap-2">
-          <div class="h-2 w-12 rounded-full transition-all" [ngClass]="currentStep === 1 ? 'bg-white' : 'bg-white/40'"></div>
-          <div class="h-2 w-12 rounded-full transition-all" [ngClass]="currentStep === 2 ? 'bg-white' : 'bg-white/40'"></div>
-        </div>
-      </div>
-
-      <!-- ================= PASO 1: DATOS PERSONALES (ESTILO DNI) ================= -->
-      <div *ngIf="currentStep === 1" class="p-8 animate-fade-in">
+      <!--======================= PASO 1: DATOS PERSONALES =======================-->
+      <div *ngIf="currentStep === 1" class="flex flex-col md:flex-row gap-8 animate-fade-in">
         
-        <div class="flex flex-col md:flex-row gap-8">
+        <!-- Lado Izquierdo: Avatar -->
+        <div class="md:w-1/3 flex flex-col items-center justify-center border-b md:border-b-0 md:border-r border-gray-100 pb-8 md:pb-0 md:pr-8">
+          <h3 class="text-sm font-bold text-gray-400 mb-4 uppercase tracking-wider text-center">Elige tu Avatar</h3>
           
-          <!-- LADO IZQUIERDO: FOTO (AVATAR) -->
-          <div class="md:w-1/3 flex flex-col items-center justify-center border-b md:border-b-0 md:border-r border-gray-100 pb-8 md:pb-0 md:pr-8">
-            <h3 class="text-sm font-bold text-gray-500 mb-4 uppercase tracking-wider">Foto de Perfil</h3>
-            
-            <!-- Avatar Seleccionado (Grande) -->
-            <div class="w-40 h-40 rounded-full border-4 border-sky-400 shadow-lg mb-6 overflow-hidden bg-gray-50">
-               <img [src]="'/assets/images/avatars/' + registerForm.get('avatar')?.value" alt="Tu Avatar" class="w-full h-full object-cover">
+          <div class="w-32 h-32 rounded-full border-4 shadow-sm mb-6 overflow-hidden flex items-center justify-center transition-all"
+               [ngClass]="registerForm.get('avatar')?.value === avatars[0] ? 'border-sky-400 bg-sky-50' : 'border-gray-200 bg-gray-50'">
+            <img [src]="registerForm.get('avatar')?.value" alt="Avatar Seleccionado" class="w-full h-full object-cover">
+          </div>
+          
+          <div class="flex gap-4 mt-2">
+            <button *ngFor="let av of avatars" type="button" (click)="selectAvatar(av)"
+                    class="w-16 h-16 rounded-full border-2 transition-all p-0.5 overflow-hidden"
+                    [ngClass]="registerForm.get('avatar')?.value === av ? 'border-sky-500 shadow-md scale-110' : 'border-gray-200 hover:border-gray-300'">
+              <img [src]="av" class="w-full h-full object-cover rounded-full bg-gray-50">
+            </button>
+          </div>
+        </div>
+
+        <!-- Lado Derecho: Datos -->
+        <div class="md:w-2/3">
+          <h3 class="text-sm font-bold text-sky-500 mb-4 uppercase tracking-wider">Tus Datos Personales</h3>
+          
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5">
+            <div>
+              <label class="block text-xs font-bold text-gray-500 mb-1">Nombre</label>
+              <input formControlName="nombre" type="text" placeholder="Ej. Juan" class="w-full px-4 py-2.5 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-sky-400 outline-none font-bold text-gray-800 transition-all hover:bg-white">
+              <p *ngIf="registerForm.get('nombre')?.invalid && registerForm.get('nombre')?.touched" class="text-red-400 text-xs mt-1 font-bold">Requerido.</p>
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-gray-500 mb-1">Apellido</label>
+              <input formControlName="apellido" type="text" placeholder="Ej. Pérez" class="w-full px-4 py-2.5 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-sky-400 outline-none font-bold text-gray-800 transition-all hover:bg-white">
+              <p *ngIf="registerForm.get('apellido')?.invalid && registerForm.get('apellido')?.touched" class="text-red-400 text-xs mt-1 font-bold">Requerido.</p>
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-gray-500 mb-1">Edad</label>
+              <input formControlName="edad" type="number" placeholder="Ej. 30" class="w-full px-4 py-2.5 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-sky-400 outline-none font-bold text-gray-800 transition-all hover:bg-white">
+              <p *ngIf="registerForm.get('edad')?.invalid && registerForm.get('edad')?.touched" class="text-red-400 text-xs mt-1 font-bold">Edad no válida.</p>
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-gray-500 mb-1">Celular</label>
+              <input formControlName="celular" type="tel" placeholder="Ej. +54 9 11..." class="w-full px-4 py-2.5 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-sky-400 outline-none font-bold text-gray-800 transition-all hover:bg-white">
+              <p *ngIf="registerForm.get('celular')?.invalid && registerForm.get('celular')?.touched" class="text-red-400 text-xs mt-1 font-bold">Requerido.</p>
+            </div>
+            <div class="sm:col-span-2">
+              <label class="block text-xs font-bold text-gray-500 mb-1">Dirección Completa</label>
+              <input formControlName="direccion" type="text" placeholder="Ej. Av. Siempreviva 742" class="w-full px-4 py-2.5 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-sky-400 outline-none font-bold text-gray-800 transition-all hover:bg-white">
+              <p *ngIf="registerForm.get('direccion')?.invalid && registerForm.get('direccion')?.touched" class="text-red-400 text-xs mt-1 font-bold">La dirección es requerida.</p>
             </div>
 
-            <!-- Opciones para elegir -->
-            <p class="text-xs font-bold text-gray-400 mb-2">Selecciona tu avatar:</p>
-            <div class="flex gap-3">
-              <div *ngFor="let av of avatars" 
-                   (click)="setAvatar(av)"
-                   class="cursor-pointer transition-all duration-300 rounded-full border-2"
-                   [ngClass]="registerForm.get('avatar')?.value === av ? 'border-sky-400 scale-110' : 'border-transparent opacity-60 hover:opacity-100'">
-                <img [src]="'/assets/images/avatars/' + av" alt="Opción" class="w-12 h-12 rounded-full object-cover shadow-sm">
-              </div>
+            <div class="sm:col-span-2 mt-2 pt-4 border-t border-gray-100"></div>
+
+            <div>
+              <label class="block text-xs font-bold text-gray-500 mb-1">Correo Electrónico</label>
+              <input formControlName="email" type="email" placeholder="tucorreo@ejemplo.com" class="w-full px-4 py-2.5 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-sky-400 outline-none font-bold text-gray-800 transition-all hover:bg-white">
+              <p *ngIf="registerForm.get('email')?.invalid && registerForm.get('email')?.touched" class="text-red-400 text-xs mt-1 font-bold">Correo inválido.</p>
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-gray-500 mb-1">Contraseña</label>
+              <input formControlName="password" type="password" placeholder="Mínimo 8 caracteres" class="w-full px-4 py-2.5 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-sky-400 outline-none font-bold text-gray-800 transition-all hover:bg-white">
+              <p *ngIf="registerForm.get('password')?.invalid && registerForm.get('password')?.touched" class="text-red-400 text-xs mt-1 font-bold">Mínimo 8 caracteres.</p>
             </div>
           </div>
 
-          <!-- LADO DERECHO: INFORMACIÓN -->
-          <div class="md:w-2/3">
-            <h3 class="text-sm font-bold text-sky-500 mb-4 uppercase tracking-wider">Datos Personales</h3>
-            
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
-              <div>
-                <label class="block text-xs font-bold text-gray-500 mb-1">Nombre</label>
-                <input formControlName="nombre" type="text" class="w-full px-4 py-2.5 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-sky-400 outline-none font-bold text-gray-800">
-              </div>
-              <div>
-                <label class="block text-xs font-bold text-gray-500 mb-1">Apellido</label>
-                <input formControlName="apellido" type="text" class="w-full px-4 py-2.5 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-sky-400 outline-none font-bold text-gray-800">
-              </div>
-              <div>
-                <label class="block text-xs font-bold text-gray-500 mb-1">Edad</label>
-                <input formControlName="edad" type="number" class="w-full px-4 py-2.5 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-sky-400 outline-none font-bold text-gray-800">
-              </div>
-              <div>
-                <label class="block text-xs font-bold text-gray-500 mb-1">Celular</label>
-                <input formControlName="celular" type="tel" class="w-full px-4 py-2.5 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-sky-400 outline-none font-bold text-gray-800">
-              </div>
-              <div class="sm:col-span-2">
-                <label class="block text-xs font-bold text-gray-500 mb-1">Dirección Completa</label>
-                <input formControlName="direccion" type="text" class="w-full px-4 py-2.5 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-sky-400 outline-none font-bold text-gray-800">
-              </div>
-
-              <div class="sm:col-span-2 mt-2 pt-4 border-t border-gray-100"></div>
-
-              <div>
-                <label class="block text-xs font-bold text-gray-500 mb-1">Correo Electrónico</label>
-                <input formControlName="email" type="email" class="w-full px-4 py-2.5 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-sky-400 outline-none font-bold text-gray-800">
-              </div>
-              <div>
-                <label class="block text-xs font-bold text-gray-500 mb-1">Contraseña</label>
-                <input formControlName="password" type="password" class="w-full px-4 py-2.5 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-sky-400 outline-none font-bold text-gray-800">
-              </div>
-            </div>
-
-            <div class="mt-8 text-right">
-              <button type="button" (click)="nextStep()" 
-                      class="bg-sky-500 hover:bg-sky-600 text-white font-extrabold py-3 px-8 rounded-xl shadow-md transition-all inline-flex items-center gap-2">
-                Siguiente
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M12.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-2.293-2.293a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
-              </button>
-            </div>
+          <div class="mt-8 flex justify-end">
+            <button type="button" (click)="nextStep()" 
+                    class="bg-sky-500 hover:bg-sky-600 text-white font-extrabold py-3 px-8 rounded-xl shadow-md transition-all inline-flex items-center gap-2">
+              Siguiente
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M12.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-2.293-2.293a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
+            </button>
           </div>
-
         </div>
       </div>
 
-      <!-- ================= PASO 2: DATOS MASCOTA (ESTILO DNI) ================= -->
-      <div *ngIf="currentStep === 2" class="p-8 animate-fade-in bg-orange-50/30">
+
+      <!--======================= PASO 2: DATOS MASCOTAS =======================-->
+      <div *ngIf="currentStep === 2" class="animate-fade-in">
         
-        <!-- Configuración General de Mascotas -->
-        <div class="flex flex-col sm:flex-row items-center justify-between mb-8 bg-white p-4 rounded-2xl shadow-sm border border-orange-100">
-          <div>
-            <h4 class="font-bold text-orange-600">Cantidad de Mascotas</h4>
-            <p class="text-xs text-gray-500">A partir de 3, crearemos el nombre de tu Familia.</p>
-          </div>
-          <div class="flex gap-4 items-center mt-4 sm:mt-0">
-            <input formControlName="cantidadMascotas" type="number" min="1" class="w-20 px-3 py-2 text-center text-lg font-bold bg-orange-50 border border-orange-200 rounded-xl focus:ring-2 focus:ring-orange-400 outline-none text-orange-600">
-          </div>
-        </div>
-
-        <div *ngIf="registerForm.get('cantidadMascotas')?.value > 2" class="mb-8 text-center p-4 bg-white shadow-sm rounded-2xl border border-sky-100 relative overflow-hidden">
-          <div class="absolute top-0 left-0 w-2 h-full bg-sky-400"></div>
-          <label class="block text-sm font-bold text-gray-500 mb-2">Nombre de la Familia</label>
-          <input formControlName="familyName" type="text" class="w-full max-w-sm mx-auto text-center px-4 py-2 text-xl font-extrabold bg-sky-50 border-0 border-b-2 border-sky-300 focus:border-sky-500 outline-none text-sky-700 transition-colors">
-        </div>
-
-        <!-- Tarjetas DNI por cada Mascota -->
-        <div formArrayName="mascotas" class="space-y-6">
-          <div *ngFor="let mascota of mascotasArray.controls; let i = index" [formGroupName]="i" 
-               class="bg-white p-6 rounded-3xl shadow-sm border border-gray-200 flex flex-col md:flex-row gap-6 relative overflow-hidden">
-            
-            <div class="absolute top-0 right-0 bg-orange-500 text-white text-xs font-bold px-4 py-1 rounded-bl-xl">
-              Mascota {{ i + 1 }}
-            </div>
-
-            <!-- LADO IZQUIERDO: FOTO MASCOTA -->
-            <div class="md:w-1/3 flex flex-col items-center justify-center border-b md:border-b-0 md:border-r border-gray-100 pb-6 md:pb-0 md:pr-6">
-              
-              <!-- Imagen Destacada -->
-              <div class="w-32 h-32 rounded-2xl bg-orange-50 border-4 border-orange-200 shadow-inner mb-4 p-2 flex items-center justify-center">
-                 <img *ngIf="mascota.get('tipo')?.value === 'Gato'" src="/assets/images/pets/gato.png" class="w-full h-full object-contain">
-                 <img *ngIf="mascota.get('tipo')?.value === 'Perro'" src="/assets/images/pets/perro.png" class="w-full h-full object-contain">
-                 <div *ngIf="!mascota.get('tipo')?.value" class="text-gray-400 font-bold text-sm text-center">Selecciona<br>un tipo</div>
-              </div>
-
-              <!-- Selector -->
-              <div class="flex bg-gray-100 rounded-full p-1 w-full max-w-[200px]">
-                <button type="button" (click)="setMascotaTipo(i, 'Gato')" class="flex-1 py-1.5 text-sm font-bold rounded-full transition-all"
-                        [ngClass]="mascota.get('tipo')?.value === 'Gato' ? 'bg-white shadow text-sky-500' : 'text-gray-400 hover:text-gray-600'">Gato</button>
-                <button type="button" (click)="setMascotaTipo(i, 'Perro')" class="flex-1 py-1.5 text-sm font-bold rounded-full transition-all"
-                        [ngClass]="mascota.get('tipo')?.value === 'Perro' ? 'bg-white shadow text-orange-500' : 'text-gray-400 hover:text-gray-600'">Perro</button>
-              </div>
-
-            </div>
-
-            <!-- LADO DERECHO: INFO MASCOTA -->
-            <div class="md:w-2/3 flex flex-col justify-center">
-              <div class="space-y-4">
-                <div>
-                  <label class="block text-xs font-bold text-gray-500 mb-1">Nombre</label>
-                  <input formControlName="nombre" type="text" placeholder="Ej. Firulais" class="w-full px-4 py-3 text-lg bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-400 outline-none font-bold text-gray-800">
-                </div>
-                <div>
-                  <label class="block text-xs font-bold text-gray-500 mb-1">Sexo</label>
-                  <select formControlName="sexo" class="w-full px-4 py-3 text-lg bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-400 outline-none font-bold text-gray-800">
-                    <option value="Macho">Macho</option>
-                    <option value="Hembra">Hembra</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-
-          </div>
-        </div>
-
-        <div class="mt-8 flex justify-between pt-6 border-t border-orange-200/50">
-          <button type="button" (click)="prevStep()" class="text-gray-500 font-bold py-3 px-6 rounded-xl hover:bg-white transition-colors">
+        <div class="flex items-center justify-between mb-6 border-b border-gray-100 pb-4">
+          <h3 class="text-lg font-extrabold text-orange-400 uppercase tracking-wider">Tus Mascotas</h3>
+          <button type="button" (click)="prevStep()" class="text-gray-400 hover:text-gray-600 font-bold text-sm flex items-center gap-1">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9.707 14.707a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 1.414L7.414 9H15a1 1 0 110 2H7.414l2.293 2.293a1 1 0 010 1.414z" clip-rule="evenodd" /></svg>
             Volver
           </button>
+        </div>
+
+        <!-- Nombre de la familia condicional si hay 3 o más mascotas -->
+        <div *ngIf="mascotasArray.length >= 3" class="mb-6 p-4 bg-orange-50/50 border border-orange-100 rounded-2xl animate-fade-in">
+          <label class="block text-xs font-extrabold text-orange-600 mb-1.5 uppercase tracking-wider">Nombre de la Familia (Requerido para 3 o más mascotas)</label>
+          <input formControlName="familyName" type="text" placeholder="Ej. Familia Rodríguez" 
+                 class="w-full px-4 py-2.5 text-sm bg-white border border-orange-200 rounded-xl focus:ring-2 focus:ring-orange-400 outline-none font-bold text-orange-800 transition-all">
+          <p *ngIf="registerForm.get('familyName')?.invalid && registerForm.get('familyName')?.touched" class="text-red-500 text-xs mt-1.5 font-bold">Este campo es requerido porque registrarás 3 o más mascotas.</p>
+        </div>
+
+        <!-- Estado Vacío -->
+        <div *ngIf="mascotasArray.length === 0" class="text-center py-12 border-2 border-dashed border-gray-200 rounded-3xl bg-gray-50/50 animate-fade-in">
+          <span class="text-5xl block mb-3">🐾</span>
+          <p class="text-gray-500 font-extrabold">No registrarás mascotas por ahora.</p>
+          <p class="text-gray-400 text-xs mt-1 mb-6">Puedes continuar con el registro o añadir una mascota ahora mismo.</p>
           
+          <button type="button" (click)="addMascota()" 
+                  class="inline-flex items-center gap-2 bg-sky-500 hover:bg-sky-600 text-white font-extrabold py-3 px-6 rounded-2xl shadow-md transition-all">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+            </svg>
+            Añadir Mascota
+          </button>
+        </div>
+
+        <!-- Lista de Mascotas (Form Array) -->
+        <div *ngIf="mascotasArray.length > 0" class="flex flex-col gap-6">
+          <div formArrayName="mascotas" class="flex flex-col gap-6 max-h-[45vh] overflow-y-auto pr-2 pb-2">
+            
+            <div *ngFor="let mascota of mascotasArray.controls; let i=index" [formGroupName]="i" 
+                 class="bg-white border border-gray-150 rounded-3xl p-6 relative shadow-sm hover:shadow-md transition-all animate-fade-in flex flex-col md:flex-row gap-6">
+              
+              <!-- Botón Eliminar -->
+              <button type="button" (click)="removeMascota(i)" 
+                      class="absolute top-4 right-4 text-gray-400 hover:text-red-500 p-1.5 hover:bg-red-50 rounded-xl transition-all"
+                      title="Eliminar Mascota">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </button>
+
+              <!-- Lado Izquierdo: Imagen del Tipo de Mascota -->
+              <div class="md:w-1/4 flex flex-col items-center justify-center border-b md:border-b-0 md:border-r border-gray-100 pb-6 md:pb-0 md:pr-6">
+                <div class="w-24 h-24 rounded-2xl border border-gray-150 bg-gray-50/50 shadow-inner overflow-hidden flex items-center justify-center transition-all p-2 relative group">
+                  <img [src]="mascotasArray.at(i).get('tipo')?.value === 'Gato' ? '/assets/images/pets/gato.png' : '/assets/images/pets/perro.png'" 
+                       alt="Imagen Mascota" class="w-full h-full object-contain transition-transform duration-300 group-hover:scale-105">
+                </div>
+                
+                <!-- Badge de Número Interno -->
+                <span class="mt-3 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold bg-sky-50 text-sky-600 border border-sky-100">
+                  <span class="w-1.5 h-1.5 rounded-full bg-sky-500 animate-pulse"></span>
+                  Mascota #{{ i + 1 }}
+                </span>
+              </div>
+
+              <!-- Lado Derecho: Formulario del Animal -->
+              <div class="flex-1">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  
+                  <!-- Nombre de la Mascota -->
+                  <div class="sm:col-span-2">
+                    <label class="block text-xs font-extrabold text-gray-400 mb-1.5 uppercase tracking-wider">Nombre de la Mascota</label>
+                    <input formControlName="nombre" type="text" placeholder="Ej. Firulais, Dandi, etc." 
+                           class="w-full px-4 py-2.5 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-sky-400 outline-none font-bold text-gray-800 transition-all hover:bg-white focus:bg-white">
+                    <p *ngIf="mascota.get('nombre')?.invalid && mascota.get('nombre')?.touched" class="text-red-400 text-xs mt-1 font-bold">El nombre es requerido.</p>
+                  </div>
+
+                  <!-- Tipo de Mascota (Botones visuales de selección) -->
+                  <div>
+                    <label class="block text-xs font-extrabold text-gray-400 mb-1.5 uppercase tracking-wider">Tipo de Mascota</label>
+                    <div class="flex gap-3">
+                      <!-- Opción Perro -->
+                      <button type="button" 
+                              (click)="mascotasArray.at(i).get('tipo')?.setValue('Perro')"
+                              class="flex-1 py-2 px-3 rounded-xl border-2 transition-all flex items-center justify-center gap-2"
+                              [ngClass]="mascotasArray.at(i).get('tipo')?.value === 'Perro' 
+                                         ? 'border-sky-500 bg-sky-50 text-sky-700 shadow-sm' 
+                                         : 'border-gray-200 bg-gray-50 text-gray-500 hover:border-gray-300 hover:bg-white'">
+                        <span class="text-lg">🐶</span>
+                        <span class="text-xs font-extrabold">Perro</span>
+                      </button>
+                      <!-- Opción Gato -->
+                      <button type="button" 
+                              (click)="mascotasArray.at(i).get('tipo')?.setValue('Gato')"
+                              class="flex-1 py-2 px-3 rounded-xl border-2 transition-all flex items-center justify-center gap-2"
+                              [ngClass]="mascotasArray.at(i).get('tipo')?.value === 'Gato' 
+                                         ? 'border-orange-500 bg-orange-50 text-orange-700 shadow-sm' 
+                                         : 'border-gray-200 bg-gray-50 text-gray-500 hover:border-gray-300 hover:bg-white'">
+                        <span class="text-lg">🐱</span>
+                        <span class="text-xs font-extrabold">Gato</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Sexo (Botones visuales de selección) -->
+                  <div>
+                    <label class="block text-xs font-extrabold text-gray-400 mb-1.5 uppercase tracking-wider">Sexo</label>
+                    <div class="flex gap-3">
+                      <!-- Opción Macho -->
+                      <button type="button" 
+                              (click)="mascotasArray.at(i).get('sexo')?.setValue('Macho')"
+                              class="flex-1 py-2 px-3 rounded-xl border-2 transition-all flex items-center justify-center gap-2"
+                              [ngClass]="mascotasArray.at(i).get('sexo')?.value === 'Macho' 
+                                         ? 'border-sky-500 bg-sky-50 text-sky-700 shadow-sm' 
+                                         : 'border-gray-200 bg-gray-50 text-gray-500 hover:border-gray-300 hover:bg-white'">
+                        <span class="text-xs font-extrabold">♂ Macho</span>
+                      </button>
+                      <!-- Opción Hembra -->
+                      <button type="button" 
+                              (click)="mascotasArray.at(i).get('sexo')?.setValue('Hembra')"
+                              class="flex-1 py-2 px-3 rounded-xl border-2 transition-all flex items-center justify-center gap-2"
+                              [ngClass]="mascotasArray.at(i).get('sexo')?.value === 'Hembra' 
+                                         ? 'border-pink-500 bg-pink-50 text-pink-700 shadow-sm' 
+                                         : 'border-gray-200 bg-gray-50 text-gray-500 hover:border-gray-300 hover:bg-white'">
+                        <span class="text-xs font-extrabold">♀ Hembra</span>
+                      </button>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+
+            </div>
+            
+          </div>
+
+          <!-- Botón de añadir otra mascota al final de la lista -->
+          <div class="flex justify-center mt-2 pb-2">
+            <button type="button" (click)="addMascota()" 
+                    class="flex items-center gap-2 border-2 border-dashed border-sky-200 hover:border-sky-400 bg-sky-50/50 hover:bg-sky-50 text-sky-600 font-extrabold py-3 px-6 rounded-2xl transition-all shadow-sm">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+              </svg>
+              Añadir otra mascota
+            </button>
+          </div>
+        </div>
+
+        <div class="mt-8 flex justify-center sm:justify-end border-t border-gray-100 pt-6">
           <button type="submit" [disabled]="registerForm.invalid || isLoading" 
-                  class="bg-gray-800 hover:bg-gray-900 disabled:opacity-50 text-white font-extrabold py-3 px-8 rounded-xl shadow-lg transition-all flex items-center gap-2">
-            <span *ngIf="isLoading">Creando...</span>
-            <span *ngIf="!isLoading">Completar Registro</span>
-            <svg *ngIf="!isLoading" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>
+                  class="w-full sm:w-auto bg-green-500 hover:bg-green-600 disabled:opacity-50 text-white font-extrabold py-3.5 px-10 rounded-xl shadow-lg shadow-green-500/30 transition-all inline-flex items-center justify-center gap-2 text-lg">
+            <span *ngIf="isLoading">Procesando...</span>
+            <span *ngIf="!isLoading">Finalizar Registro</span>
+            <svg *ngIf="!isLoading" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
           </button>
         </div>
 
@@ -188,7 +266,7 @@
 
     </form>
     
-    <div class="mt-6 text-center" *ngIf="currentStep === 1">
+    <div class="mt-6 text-center">
       <p class="text-gray-500 text-sm font-bold">
         ¿Ya tienes cuenta? 
         <a routerLink="/login" class="text-sky-500 hover:text-sky-600 underline decoration-2 underline-offset-2">Inicia sesión</a>

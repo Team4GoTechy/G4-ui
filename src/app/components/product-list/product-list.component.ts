@@ -5,6 +5,7 @@ import { RouterLink } from '@angular/router';
 import { ProductService } from '../../services/product.service';
 import { AuthService } from '../../services/auth.service';
 import { Product } from '../../models/product.model';
+import { toast } from 'ngx-sonner';
 
 @Component({
   selector: 'app-product-list',
@@ -20,6 +21,9 @@ export class ProductListComponent implements OnInit {
   user$ = this.authService.currentUser$;
 
   products: Product[] = [];
+  categories: any[] = [];
+  selectedCategory: number | null = null;
+  isLoading = false;
   
   // Carrito de Compras
   cart: { product: Product, quantity: number }[] = [];
@@ -38,15 +42,38 @@ export class ProductListComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    // Datos simulados (Mock) para ver la UI
-    this.products = [
-      { id: 1, nombre: 'Alimento Royal Canin Gatos', codigo: 'CAT-01', descripcion: 'Alimento premium para gatos adultos', precio: 25000, stock: 15, categoria: 'Gato' },
-      { id: 2, nombre: 'Rascador Torre de 3 Pisos', codigo: 'CAT-02', descripcion: 'Rascador con cucha y juguetes colgantes', precio: 45000, stock: 5, categoria: 'Gato' },
-      { id: 3, nombre: 'Piedras Sanitarias Aglomerantes', codigo: 'CAT-03', descripcion: 'Bolsa de 10kg sin olor', precio: 12000, stock: 30, categoria: 'Gato' },
-      { id: 4, nombre: 'Alimento ProPlan Perros Raza Mediana', codigo: 'DOG-01', descripcion: 'Alimento super premium 15kg', precio: 32000, stock: 10, categoria: 'Perro' },
-      { id: 5, nombre: 'Correa Extensible 5m', codigo: 'DOG-02', descripcion: 'Correa resistente hasta 25kg', precio: 15000, stock: 20, categoria: 'Perro' },
-      { id: 6, nombre: 'Cama Acolchada Extra Grande', codigo: 'DOG-03', descripcion: 'Cama lavable para perros grandes', precio: 28000, stock: 8, categoria: 'Perro' }
-    ];
+    this.loadCategories();
+    this.loadProducts();
+  }
+
+  loadCategories() {
+    this.productService.getCategories().subscribe({
+      next: (data) => {
+        this.categories = data;
+      },
+      error: () => {
+        toast.error('Error al cargar categorías');
+      }
+    });
+  }
+
+  loadProducts() {
+    this.isLoading = true;
+    this.productService.getProducts(this.selectedCategory || undefined).subscribe({
+      next: (data) => {
+        this.products = data;
+        this.isLoading = false;
+      },
+      error: () => {
+        toast.error('Error al cargar productos');
+        this.isLoading = false;
+      }
+    });
+  }
+
+  filterByCategory(catId: number | null) {
+    this.selectedCategory = catId;
+    this.loadProducts();
   }
 
   // Lógica del Carrito
@@ -56,15 +83,20 @@ export class ProductListComponent implements OnInit {
       if (item) {
         if (item.quantity < product.stock) {
           item.quantity++;
+          toast.success(`Se añadió una unidad más de ${product.nombre}`);
+        } else {
+          toast.warning('No hay suficiente stock disponible');
         }
       } else {
         this.cart.push({ product, quantity: 1 });
+        toast.success(`${product.nombre} agregado al carrito`);
       }
     }
   }
 
   removeFromCart(productId: number) {
     this.cart = this.cart.filter(i => i.product.id !== productId);
+    toast.info('Producto removido del carrito');
   }
 
   get cartTotal() {
@@ -88,10 +120,46 @@ export class ProductListComponent implements OnInit {
     this.isCheckoutModalOpen = false;
   }
 
-  processPayment(method: 'efectivo' | 'transferencia') {
-    // Simular el pago
-    alert(`Pago procesado con ${method}. Total: $${this.cartTotal}`);
-    this.cart = [];
-    this.isCheckoutModalOpen = false;
+  processPayment(method: 'EFECTIVO' | 'TRANSFERENCIA') {
+    if (this.cart.length === 0) return;
+
+    this.isLoading = true;
+    
+    // Preparar el cuerpo de la compra según DTO backend CompraRequest
+    const purchaseRequest = {
+      metodoPago: method,
+      productos: this.cart.map(item => ({
+        productoId: item.product.id,
+        cantidad: item.quantity
+      }))
+    };
+
+    this.productService.createPurchase(purchaseRequest).subscribe({
+      next: () => {
+        this.isLoading = false;
+        toast.success('¡Compra realizada con éxito!', {
+          description: `Tu pedido ha sido registrado con método de pago: ${method}`
+        });
+        this.cart = [];
+        this.isCheckoutModalOpen = false;
+        this.loadProducts(); // Recargar productos para actualizar stock
+      },
+      error: (err) => {
+        this.isLoading = false;
+        toast.error('Error al procesar la compra', {
+          description: err.error?.message || 'Hubo un error de comunicación con el servidor.'
+        });
+      }
+    });
+  }
+
+  isRecommended(product: Product, user: any): boolean {
+    if (!user || !user.tipoMascota) return false;
+    const petType = user.tipoMascota.toLowerCase();
+    const prodCat = (product.categoria || '').toLowerCase();
+    const prodName = (product.nombre || '').toLowerCase();
+    const prodDesc = (product.descripcion || '').toLowerCase();
+
+    return prodCat.includes(petType) || prodName.includes(petType) || prodDesc.includes(petType);
   }
 }

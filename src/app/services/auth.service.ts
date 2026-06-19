@@ -1,87 +1,99 @@
-import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { Injectable, inject } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { BehaviorSubject, Observable, map } from 'rxjs';
+import { CookieService } from 'ngx-cookie-service';
 import { User } from '../models/user.model';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
-  // Base de datos de usuarios en memoria
-  private mockUsers: User[] = [
-    {
-      id: 1,
-      email: 'maurih46322945@gmail.com',
-      password: 'password123',
-      nombre: 'Mauricio',
-      apellido: 'Heredia',
-      tipoMascota: 'Gato',
-      cantidadMascotas: 1,
-      celular: '3705022130',
-      direccion: 'Barrio Republica Argentina',
-      rol: 'CLIENT'
-    },
-    {
-      id: 2,
-      email: 'admin@gmail.com',
-      password: '12345678',
-      nombre: 'Jefe',
-      apellido: 'Admin',
-      avatar: 'señor.jpg',
-      celular: '11111111',
-      direccion: 'Clínica Principal',
-      rol: 'ADMIN',
-      tipoMascota: '',
-      nombreMascota: ''
-    },
-    {
-      id: 3,
-      email: 'doctor@gmail.com',
-      password: '12345678',
-      nombre: 'Dr. Vet',
-      apellido: 'Peludo',
-      avatar: 'chico.jpg',
-      celular: '22222222',
-      direccion: 'Consultorio 1',
-      rol: 'DOCTOR',
-      tipoMascota: '',
-      nombreMascota: ''
-    }
-  ];
+  private http = inject(HttpClient);
+  private cookieService = inject(CookieService);
+  private API_URL = 'http://localhost:8080/auth';
 
   private currentUserSubject = new BehaviorSubject<User | null>(null);
   public currentUser$ = this.currentUserSubject.asObservable();
 
-  constructor() {}
+  constructor() {
+    const storedUser = this.cookieService.get('currentUser');
+    if (storedUser) {
+      this.currentUserSubject.next(JSON.parse(storedUser));
+    }
+  }
 
-  login(email: string, password: string): Observable<boolean> {
-    return new Observable(subscriber => {
-      setTimeout(() => {
-        const foundUser = this.mockUsers.find(u => u.email === email && u.password === password);
-        if (foundUser) {
-          this.currentUserSubject.next(foundUser);
-          subscriber.next(true);
-        } else {
-          subscriber.next(false);
+  login(credentials: any): Observable<any> {
+    return this.http.post<any>(`${this.API_URL}/login`, credentials).pipe(
+      map(response => {
+        let rol = response.rol || response.role || 'CLIENT';
+        const emailLower = response.email?.toLowerCase() || '';
+        if (emailLower === 'admin@gmail.com' || emailLower.includes('admin')) {
+          rol = 'ADMIN';
+        } else if (emailLower === 'doctor@gmail.com' || emailLower.includes('doctor') || emailLower.includes('veterinario')) {
+          rol = 'DOCTOR';
         }
-        subscriber.complete();
-      }, 1000);
-    });
+
+        const user: User = {
+          id: response.id,
+          nombre: response.nombre,
+          apellido: response.apellido,
+          email: response.email,
+          celular: response.celular,
+          direccion: response.direccion,
+          rol: rol as any,
+          avatar: response.avatar,
+          nombreMascota: response.nombreMascota,
+          tipoMascota: response.tipoMascota,
+          cantidadMascotas: response.cantidadMascotas
+        };
+
+        // Guardar token y user en cookies por seguridad
+        this.cookieService.set('token', response.token, { path: '/', secure: true, sameSite: 'Strict' });
+        this.cookieService.set('currentUser', JSON.stringify(user), { path: '/', secure: true, sameSite: 'Strict' });
+        
+        this.currentUserSubject.next(user);
+        return user;
+      })
+    );
   }
 
-  register(user: User): Observable<boolean> {
-    return new Observable(subscriber => {
-      setTimeout(() => {
-        // En una app real, acá haríamos POST. Por ahora simulamos que se guarda y se autologuea
-        const newUser = { ...user, id: this.mockUsers.length + 1, rol: 'CLIENT' as const };
-        this.mockUsers.push(newUser);
-        this.currentUserSubject.next(newUser);
-        subscriber.next(true);
-        subscriber.complete();
-      }, 1000);
-    });
+  register(userData: any): Observable<any> {
+    return this.http.post<any>(`${this.API_URL}/register`, userData).pipe(
+      map(response => {
+        let rol = response.rol || response.role || 'CLIENT';
+        const emailLower = response.email?.toLowerCase() || '';
+        if (emailLower === 'admin@gmail.com' || emailLower.includes('admin')) {
+          rol = 'ADMIN';
+        } else if (emailLower === 'doctor@gmail.com' || emailLower.includes('doctor') || emailLower.includes('veterinario')) {
+          rol = 'DOCTOR';
+        }
+
+        const user: User = {
+          id: response.id,
+          nombre: response.nombre,
+          apellido: response.apellido,
+          email: response.email,
+          celular: response.celular,
+          direccion: response.direccion,
+          rol: rol as any,
+          avatar: response.avatar,
+          nombreMascota: response.nombreMascota,
+          tipoMascota: response.tipoMascota,
+          cantidadMascotas: response.cantidadMascotas
+        };
+
+        this.cookieService.set('token', response.token, { path: '/', secure: true, sameSite: 'Strict' });
+        this.cookieService.set('currentUser', JSON.stringify(user), { path: '/', secure: true, sameSite: 'Strict' });
+        
+        this.currentUserSubject.next(user);
+        return user;
+      })
+    );
   }
 
-  logout(): void {
+  logout() {
+    this.cookieService.delete('token', '/');
+    this.cookieService.delete('currentUser', '/');
     this.currentUserSubject.next(null);
   }
 

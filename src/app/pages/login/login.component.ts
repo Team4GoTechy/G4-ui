@@ -4,6 +4,8 @@ import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angula
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 
+import { toast } from 'ngx-sonner';
+
 @Component({
   selector: 'app-login',
   standalone: true,
@@ -17,7 +19,6 @@ export class LoginComponent {
 
   loginForm: FormGroup;
   isLoading = false;
-  errorMessage = '';
 
   constructor() {
     this.loginForm = this.fb.group({
@@ -29,25 +30,34 @@ export class LoginComponent {
   onSubmit() {
     if (this.loginForm.valid) {
       this.isLoading = true;
-      this.errorMessage = '';
-      
       const { email, password } = this.loginForm.value;
       
-      this.authService.login(email, password).subscribe(success => {
-        this.isLoading = false;
-        
-        if (success) {
-          const user = this.authService.getCurrentUser();
-          if (user?.rol === 'ADMIN') {
+      this.authService.login({ email, password }).subscribe({
+        next: (user) => {
+          this.isLoading = false;
+          toast.success('¡Bienvenido de vuelta!', {
+            description: `Has iniciado sesión correctamente.`
+          });
+          
+          if (user.rol === 'ADMIN') {
             this.router.navigate(['/admin']);
-          } else if (user?.rol === 'DOCTOR') {
+          } else if (user.rol === 'DOCTOR') {
             this.router.navigate(['/doctor']);
           } else {
             this.router.navigate(['/cliente']);
           }
-        } else {
-          this.errorMessage = 'Credenciales incorrectas. Para esta prueba usa admin@gmail.com o doctor@gmail.com con clave 12345678';
+        },
+        error: (err) => {
+          this.isLoading = false;
+          toast.error('Acceso denegado', {
+            description: err.error?.message || 'Correo o contraseña incorrectos. Verifica tus credenciales e intenta de nuevo.'
+          });
         }
+      });
+    } else {
+      this.loginForm.markAllAsTouched();
+      toast.warning('Formulario incompleto', {
+        description: 'Por favor, llena todos los campos correctamente.'
       });
     }
   }

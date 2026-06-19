@@ -20,6 +20,16 @@ export class SidebarComponent {
     this.isCollapsed = !this.isCollapsed;
   }
 
+  getAvatarUrl(avatar?: string): string {
+    if (!avatar) {
+      return '/assets/images/avatars/chico.jpg';
+    }
+    if (avatar.startsWith('http') || avatar.startsWith('/')) {
+      return avatar;
+    }
+    return `/assets/images/avatars/${avatar}`;
+  }
+
   logout() {
     this.authService.logout();
     this.router.navigate(['/']);
