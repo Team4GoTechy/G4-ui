@@ -1,0 +1,64 @@
+/* Screen layouts styling */
+.printable-area {
+  display: none;
+}
+
+@media print {
+  /* Hide everything else on the screen */
+  body * {
+    visibility: hidden;
+  }
+  
+  /* Show only the printable-area container */
+  .printable-area, .printable-area * {
+    visibility: visible;
+  }
+  
+  .printable-area {
+    display: block !important;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    z-index: 99999;
+    background: white !important;
+    color: black !important;
+    margin: 0;
+    padding: 0;
+  }
+  
+  /* Suppress standard headers and footers from browser */
+  @page {
+    margin: 1.5cm;
+  }
+}
+
+.animate-pulse-slow {
+  animation: pulseSlow 3s infinite ease-in-out;
+}
+
+@keyframes pulseSlow {
+  0%, 100% { 
+    border-color: rgba(239, 68, 68, 0.25); 
+    box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.05); 
+  }
+  50% { 
+    border-color: rgba(239, 68, 68, 0.65); 
+    box-shadow: 0 10px 20px -3px rgba(239, 68, 68, 0.18); 
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
+@keyframes fadeIn {
+  from { 
+    opacity: 0; 
+    transform: scale(0.96); 
+  }
+  to { 
+    opacity: 1; 
+    transform: scale(1); 
+  }
+}

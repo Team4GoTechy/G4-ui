@@ -20,6 +20,7 @@ export class DoctorInternacionesComponent implements OnInit {
 
   user = this.authService.getCurrentUser();
   internacionesActivas: InternacionResponse[] = [];
+  solicitudesReingreso: InternacionResponse[] = [];
   mascotasDisponibles: MascotaResponse[] = [];
   loading = false;
 
@@ -42,11 +43,22 @@ export class DoctorInternacionesComponent implements OnInit {
     temperatura: 0
   };
 
+  // Modal Alta Médica con Cuidados
+  isAltaModalOpen = false;
+  internacionAltaSeleccionada: InternacionResponse | null = null;
+  indicacionesAlta = '';
+
+  // Modal Aprobar Reingreso Solicitado por Cliente
+  isAprobarReingresoModalOpen = false;
+  reingresoSeleccionado: InternacionResponse | null = null;
+  jaulaReingreso = '';
+
   // Estado para desplegar historial de evoluciones en la tarjeta
   evolucionesAbiertas: { [key: number]: boolean } = {};
 
   ngOnInit() {
     this.cargarInternaciones();
+    this.cargarSolicitudes();
     this.cargarMascotas();
   }
 
@@ -68,6 +80,15 @@ export class DoctorInternacionesComponent implements OnInit {
         console.error('Error al cargar internaciones', err);
         this.loading = false;
       }
+    });
+  }
+
+  cargarSolicitudes() {
+    this.internacionService.listarPendientesReingreso().subscribe({
+      next: (res) => {
+        this.solicitudesReingreso = res || [];
+      },
+      error: (err) => console.error('Error al cargar solicitudes de reingreso', err)
     });
   }
 
@@ -148,18 +169,64 @@ export class DoctorInternacionesComponent implements OnInit {
 
   // --- Alta Médica ---
 
-  darDeAlta(internacionId: number) {
-    if (!confirm('¿Está seguro de que desea dar de alta a este paciente?')) {
+  abrirAltaModal(internacion: InternacionResponse) {
+    this.internacionAltaSeleccionada = internacion;
+    this.indicacionesAlta = '';
+    this.isAltaModalOpen = true;
+  }
+
+  cerrarAltaModal() {
+    this.isAltaModalOpen = false;
+    this.internacionAltaSeleccionada = null;
+  }
+
+  guardarAlta() {
+    if (!this.internacionAltaSeleccionada) return;
+    if (!this.indicacionesAlta.trim()) {
+      alert('Las indicaciones de cuidado post-alta son obligatorias.');
       return;
     }
 
-    this.internacionService.darDeAlta(internacionId).subscribe({
+    this.internacionService.darDeAlta(this.internacionAltaSeleccionada.id, this.indicacionesAlta).subscribe({
       next: () => {
+        this.cerrarAltaModal();
         this.cargarInternaciones();
       },
       error: (err) => {
         console.error('Error dando de alta', err);
         alert('Ocurrió un error al dar de alta al paciente.');
+      }
+    });
+  }
+
+  // --- Confirmar Reingreso ---
+
+  abrirAprobarReingresoModal(internacion: InternacionResponse) {
+    this.reingresoSeleccionado = internacion;
+    this.jaulaReingreso = '';
+    this.isAprobarReingresoModalOpen = true;
+  }
+
+  cerrarAprobarReingresoModal() {
+    this.isAprobarReingresoModalOpen = false;
+    this.reingresoSeleccionado = null;
+  }
+
+  guardarConfirmacionReingreso() {
+    if (!this.reingresoSeleccionado || !this.jaulaReingreso.trim()) {
+      alert('Debes ingresar un ID de jaula física para aceptar al paciente.');
+      return;
+    }
+
+    this.internacionService.confirmarReingreso(this.reingresoSeleccionado.id, this.jaulaReingreso).subscribe({
+      next: () => {
+        this.cerrarAprobarReingresoModal();
+        this.cargarInternaciones();
+        this.cargarSolicitudes();
+      },
+      error: (err) => {
+        console.error('Error al confirmar reingreso', err);
+        alert('Ocurrió un error al procesar el reingreso.');
       }
     });
   }

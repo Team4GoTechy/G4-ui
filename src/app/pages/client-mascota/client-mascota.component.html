@@ -1,56 +1,371 @@
-<div class="h-full bg-slate-50 p-8 rounded-2xl border border-gray-100 flex flex-col font-nunito overflow-y-auto" *ngIf="user$ | async as user">
+<div class="h-full bg-slate-50 p-6 md:p-8 rounded-3xl border border-gray-100 flex flex-col font-nunito overflow-y-auto w-full max-w-6xl mx-auto" *ngIf="user$ | async as user">
   
-  <div class="mb-8">
-    <h1 class="text-3xl font-extrabold text-gray-800">Expediente de {{ user.nombreMascota }} {{ user.tipoMascota === 'Perro' ? '🐶' : '🐱' }}</h1>
-    <p class="text-gray-500">Monitoreo de salud y signos vitales</p>
-  </div>
-
-  <!-- Signos Vitales -->
-  <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-    <div class="bg-white p-6 rounded-2xl shadow-sm border border-sky-100 flex items-center gap-4">
-      <div class="bg-sky-100 text-sky-500 p-3 rounded-xl">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3"/></svg>
-      </div>
-      <div>
-        <p class="text-sm font-bold text-gray-400 uppercase tracking-wide">Peso Actual</p>
-        <p class="text-2xl font-extrabold text-gray-800">4.5 <span class="text-lg text-gray-500">kg</span></p>
-      </div>
+  <!-- Encabezado y Selección de Mascota -->
+  <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+    <div>
+      <h1 class="text-3xl font-black text-gray-800">Expediente Médico</h1>
+      <p class="text-gray-500 font-bold">Monitoreo de salud, recetas e historial clínico</p>
     </div>
     
-    <div class="bg-white p-6 rounded-2xl shadow-sm border border-orange-100 flex items-center gap-4">
-      <div class="bg-orange-100 text-orange-500 p-3 rounded-xl">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+    <!-- Pestañas de Mascotas -->
+    <div class="flex flex-wrap gap-2" *ngIf="misMascotas.length > 1">
+      <button *ngFor="let pet of misMascotas" 
+              (click)="seleccionarMascota(pet)"
+              [class]="mascotaSeleccionada?.id === pet.id 
+                ? 'bg-sky-500 text-white font-extrabold px-5 py-2.5 rounded-2xl shadow-sm transition-all' 
+                : 'bg-white hover:bg-sky-50 text-gray-600 font-extrabold px-5 py-2.5 rounded-2xl border border-gray-200 transition-all'">
+        🐾 {{ pet.nombre }}
+      </button>
+    </div>
+  </div>
+
+  <div *ngIf="mascotaSeleccionada" class="flex flex-col gap-8">
+    
+    <!-- Banner de Internación Actual -->
+    <div *ngIf="internacionActual" 
+         [class]="internacionActual.estado === 'ACTIVA' 
+           ? 'bg-red-50 border-2 border-red-200 rounded-3xl p-6 shadow-sm flex flex-col md:flex-row justify-between items-center gap-4 animate-pulse-slow' 
+           : 'bg-yellow-50 border-2 border-yellow-200 rounded-3xl p-6 shadow-sm flex flex-col md:flex-row justify-between items-center gap-4'">
+      <div class="flex items-center gap-4">
+        <div [class]="internacionActual.estado === 'ACTIVA' ? 'bg-red-100 text-red-500' : 'bg-yellow-100 text-yellow-500' + ' p-4 rounded-full text-3xl'">
+          {{ internacionActual.estado === 'ACTIVA' ? '🚨' : '⏳' }}
+        </div>
+        <div>
+          <h4 [class]="internacionActual.estado === 'ACTIVA' ? 'text-red-800' : 'text-yellow-800' + ' text-lg font-black uppercase tracking-wide'">
+            {{ internacionActual.estado === 'ACTIVA' ? 'Mascota Internada' : 'Reingreso en Proceso de Aprobación' }}
+          </h4>
+          <p [class]="internacionActual.estado === 'ACTIVA' ? 'text-red-700' : 'text-yellow-700' + ' font-bold mt-1'">
+            {{ mascotaSeleccionada.nombre }} se encuentra bajo cuidado médico hospitalario.
+          </p>
+          <div class="mt-2 text-sm font-bold flex flex-wrap gap-x-4 gap-y-1" [class]="internacionActual.estado === 'ACTIVA' ? 'text-red-600' : 'text-yellow-600'">
+            <span *ngIf="internacionActual.jaulaId">📍 Jaula: {{ internacionActual.jaulaId }}</span>
+            <span>📅 Ingreso: {{ internacionActual.fechaIngreso | date:'dd/MM/yyyy HH:mm' }}</span>
+          </div>
+          <p class="text-sm mt-1 italic font-medium" [class]="internacionActual.estado === 'ACTIVA' ? 'text-red-500' : 'text-yellow-500'" *ngIf="internacionActual.notasCliente">
+            Notas enviadas: "{{ internacionActual.notasCliente }}"
+          </p>
+        </div>
       </div>
-      <div>
-        <p class="text-sm font-bold text-gray-400 uppercase tracking-wide">Frec. Cardíaca</p>
-        <p class="text-2xl font-extrabold text-gray-800">120 <span class="text-lg text-gray-500">bpm</span></p>
+      <div class="bg-white px-5 py-3 rounded-2xl border font-black text-sm uppercase tracking-wider" 
+           [class]="internacionActual.estado === 'ACTIVA' ? 'text-red-600 border-red-100 shadow-sm' : 'text-yellow-600 border-yellow-100'">
+        {{ internacionActual.estado === 'ACTIVA' ? '⚠️ Crítico' : '⏳ Esperando Jaula' }}
       </div>
     </div>
 
-    <div class="bg-white p-6 rounded-2xl shadow-sm border border-emerald-100 flex items-center gap-4">
-      <div class="bg-emerald-100 text-emerald-500 p-3 rounded-xl">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>
+    <!-- Signos Vitales y Estado de Salud -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+      
+      <!-- Salud General -->
+      <div class="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex items-center gap-4">
+        <div class="bg-emerald-100 text-emerald-500 p-3.5 rounded-2xl">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+        </div>
+        <div>
+          <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Salud General</p>
+          <p class="text-lg font-black text-gray-800">{{ saludGeneral }}</p>
+        </div>
       </div>
-      <div>
-        <p class="text-sm font-bold text-gray-400 uppercase tracking-wide">Próxima Vacuna</p>
-        <p class="text-2xl font-extrabold text-gray-800">Antirrábica</p>
+
+      <!-- Frecuencia Cardiaca -->
+      <div class="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex items-center gap-4">
+        <div class="bg-red-100 text-red-500 p-3.5 rounded-2xl">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+        </div>
+        <div>
+          <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Frec. Cardíaca</p>
+          <p class="text-lg font-black text-gray-800">{{ frecuenciaCardiaca > 0 ? frecuenciaCardiaca + ' bpm' : 'N/D' }}</p>
+        </div>
+      </div>
+
+      <!-- Temperatura -->
+      <div class="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex items-center gap-4">
+        <div class="bg-amber-100 text-amber-500 p-3.5 rounded-2xl">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+        </div>
+        <div>
+          <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Temperatura</p>
+          <p class="text-lg font-black text-gray-800">{{ temperatura > 0 ? temperatura + ' °C' : 'N/D' }}</p>
+        </div>
+      </div>
+
+      <!-- Ultimo Medicamento -->
+      <div class="bg-white p-6 rounded-3xl shadow-sm border border-sky-100 flex items-center gap-4">
+        <div class="bg-sky-100 text-sky-500 p-3.5 rounded-2xl">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>
+        </div>
+        <div class="truncate flex-1">
+          <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Último Tratamiento</p>
+          <p class="text-lg font-black text-gray-800 truncate" [title]="ultimoMedicamento">{{ ultimoMedicamento }}</p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Botón de Solicitud de Reingreso -->
+    <div class="flex justify-end" *ngIf="!internacionActual">
+      <button (click)="abrirReingresoModal()" 
+              class="flex items-center gap-2 bg-gradient-to-r from-red-500 to-rose-500 hover:from-red-600 hover:to-rose-600 text-white font-extrabold px-6 py-3.5 rounded-2xl shadow-md transition-all hover:scale-[1.02]">
+        🚨 Reportar Recaída / Solicitar Re-internación
+      </button>
+    </div>
+
+    <!-- Sección de Recetas Médicas -->
+    <div class="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-gray-100">
+      <div class="mb-6">
+        <h2 class="text-2xl font-black text-gray-800 flex items-center gap-2">
+          <span>📋</span> Recetas Médicas Emitidas
+        </h2>
+        <p class="text-gray-500 font-bold text-sm">
+          Tenés {{ recetas.length }} receta{{ recetas.length === 1 ? '' : 's' }} del doctor para tu {{ mascotaSeleccionada?.especie === 'Perro' ? 'perro' : 'gato' }} <span class="text-sky-500 font-extrabold">{{ mascotaSeleccionada?.nombre }}</span>.
+        </p>
+      </div>
+
+      <div *ngIf="isLoadingRecetas" class="flex justify-center p-8">
+        <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-sky-500"></div>
+      </div>
+
+      <div class="flex flex-col gap-6" *ngIf="!isLoadingRecetas && recetas.length > 0">
+        <div *ngFor="let receta of recetas" class="border border-slate-100 rounded-3xl p-6 bg-slate-50/50 flex flex-col gap-4">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-gray-200/60 pb-3">
+            <div>
+              <p class="text-xs font-bold text-gray-400 uppercase tracking-wide">Médico Tratante</p>
+              <p class="font-extrabold text-gray-800 text-lg">Dr. {{ receta.veterinarioNombre }}</p>
+            </div>
+            <div class="text-right sm:text-right">
+              <span class="inline-block px-3.5 py-1.5 rounded-xl bg-sky-50 border border-sky-100 text-sky-600 font-extrabold text-xs">
+                📅 Emitido: {{ receta.fecha }}
+              </span>
+            </div>
+          </div>
+
+          <!-- Detalles de los Medicamentos -->
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm">
+              <thead>
+                <tr class="text-gray-400 font-extrabold border-b border-slate-100 uppercase tracking-wider text-xs">
+                  <th class="py-2 pr-4">Medicamento</th>
+                  <th class="py-2 px-4">Dosis</th>
+                  <th class="py-2 px-4">Frecuencia</th>
+                  <th class="py-2 px-4">Duración</th>
+                  <th class="py-2 pl-4">Instrucciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let det of receta.detalles" class="text-gray-700 font-bold border-b border-slate-100/50 last:border-0 hover:bg-slate-50/50">
+                  <td class="py-3 pr-4 font-black text-gray-800">{{ det.insumoNombre }}</td>
+                  <td class="py-3 px-4 font-extrabold">{{ det.dosis }}</td>
+                  <td class="py-3 px-4">{{ det.frecuencia }}</td>
+                  <td class="py-3 px-4">{{ det.duracion }}</td>
+                  <td class="py-3 pl-4 text-gray-500 font-medium text-xs">{{ det.instrucciones || 'Sin instrucciones adicionales' }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Observaciones -->
+          <div class="bg-white p-4 rounded-2xl border border-gray-100/80 text-sm font-medium" *ngIf="receta.observaciones">
+            <strong class="text-gray-700 block font-black uppercase text-xs tracking-wider mb-1">Notas del Doctor:</strong>
+            <p class="text-gray-600 font-bold leading-relaxed">{{ receta.observaciones }}</p>
+          </div>
+
+          <!-- Botones de Acción -->
+          <div class="flex flex-wrap gap-3 justify-end mt-2">
+            <!-- Imprimir -->
+            <button (click)="imprimirReceta(receta)" 
+                    class="flex items-center gap-2 bg-white hover:bg-slate-50 text-gray-700 font-extrabold px-5 py-2.5 rounded-2xl border border-gray-200 transition-all shadow-sm">
+              🖨️ Imprimir Receta
+            </button>
+            <!-- WhatsApp -->
+            <button (click)="compartirWhatsApp(receta)" 
+                    class="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white font-extrabold px-5 py-2.5 rounded-2xl transition-all shadow-md hover:scale-[1.02]">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.513 2.262 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.504-5.714-1.466L0 24zm6.05-4.897c1.677.994 3.325 1.522 5.176 1.523 5.46.002 9.902-4.394 9.905-9.8.002-2.618-1.02-5.08-2.88-6.945C16.452 1.916 13.99 1.866 12.003 1.866c-5.462 0-9.903 4.394-9.907 9.8-.001 1.93.52 3.818 1.511 5.488l-.995 3.637 3.775-.989zm12.593-6.141c-.281-.14-.1.32-.421-.49-.071-.14-.281-.21-.563-.35-.281-.14-1.661-.818-1.921-.91-.261-.09-.45-.14-.64.14-.19.28-.731.91-.891 1.09-.16.18-.32.2-.6.06-.28-.14-1.182-.43-2.251-1.38-.83-.74-1.39-1.65-1.55-1.93-.16-.28-.016-.431.124-.571.13-.13.28-.32.42-.49.14-.17.19-.28.28-.46.09-.18.05-.35-.02-.49-.07-.14-.64-1.54-.876-2.11-.23-.56-.47-.48-.64-.49-.17-.01-.36-.01-.56-.01-.2 0-.53.07-.8.37-.28.3-1.06 1.03-1.06 2.5 0 1.47 1.07 2.89 1.22 3.09.15.2 2.1 3.2 5.09 4.49.71.31 1.27.49 1.7.63.72.22 1.37.19 1.88.11.57-.08 1.76-.71 2.01-1.4.25-.69.25-1.28.17-1.4-.08-.12-.28-.19-.56-.33z"/></svg>
+              Enviar por WhatsApp
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div *ngIf="!isLoadingRecetas && recetas.length === 0" class="text-center p-8 bg-slate-50 rounded-3xl">
+        <p class="text-gray-400 font-extrabold">Tu mascota no tiene recetas médicas emitidas todavía.</p>
+      </div>
+    </div>
+
+    <!-- Calendario de Salud Reciente -->
+    <div class="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-gray-100">
+      <h3 class="text-xl font-black text-gray-800 mb-1">Estado Semanal (Últimos 120 días)</h3>
+      <p class="text-sm font-bold text-gray-400 mb-6 flex flex-wrap gap-x-4 gap-y-1">
+        <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-emerald-400"></span> Excelente</span>
+        <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-yellow-400"></span> Regular</span>
+        <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-red-500"></span> Malestar</span>
+      </p>
+
+      <div class="flex flex-wrap gap-1.5 justify-center sm:justify-start">
+        <div *ngFor="let day of healthCalendar" 
+             [class]="getColor(day) + ' w-4 h-4 rounded-sm transition-transform hover:scale-125 cursor-pointer'"
+             [title]="day === 0 ? 'Excelente' : day === 1 ? 'Regular' : 'Malestar'">
+        </div>
+      </div>
+    </div>
+
+    <!-- Timeline del Historial Clínico -->
+    <div class="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-gray-100">
+      <div class="mb-6 border-b border-slate-100 pb-4">
+        <h2 class="text-2xl font-black text-gray-800 flex items-center gap-2">
+          <span>🩺</span> Historial Clínico de Consultas
+        </h2>
+        <p class="text-gray-500 font-bold text-sm">Cronología completa de atenciones médicas y diagnósticos</p>
+      </div>
+
+      <div *ngIf="isLoadingHistorial" class="flex justify-center p-8">
+        <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-sky-500"></div>
+      </div>
+
+      <div class="relative pl-6 border-l-2 border-sky-100 flex flex-col gap-8 ml-3" *ngIf="!isLoadingHistorial && historialConsultas.length > 0">
+        <div *ngFor="let consulta of historialConsultas" class="relative">
+          
+          <!-- Icono/Punto del Timeline -->
+          <div class="absolute -left-[35px] top-1 bg-white border-2 border-sky-500 text-sky-500 w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs shadow-sm">
+            ✓
+          </div>
+
+          <div class="bg-slate-50/50 hover:bg-slate-50 border border-slate-100 rounded-3xl p-5 transition-all">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+              <span class="text-sm font-black text-sky-600 block">
+                📅 {{ consulta.fechaCreacion | date:'dd/MM/yyyy HH:mm' }}
+              </span>
+              <span class="text-xs font-bold text-gray-400 uppercase tracking-wide">
+                Atendido por: Dr. {{ consulta.veterinarioNombre }}
+              </span>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <span class="text-xs uppercase font-extrabold text-gray-400 tracking-wider block mb-1">Motivo de consulta:</span>
+                <p class="text-sm font-bold text-gray-700">{{ consulta.motivo }}</p>
+              </div>
+              <div *ngIf="consulta.diagnostico">
+                <span class="text-xs uppercase font-extrabold text-gray-400 tracking-wider block mb-1">Diagnóstico:</span>
+                <p class="text-sm font-extrabold text-emerald-700 bg-emerald-50 px-3 py-1 rounded-xl inline-block border border-emerald-100">{{ consulta.diagnostico }}</p>
+              </div>
+            </div>
+
+            <div class="mt-4 border-t border-slate-200/50 pt-3" *ngIf="consulta.tratamiento">
+              <span class="text-xs uppercase font-extrabold text-sky-500 tracking-wider block mb-1">Tratamiento e indicaciones:</span>
+              <p class="text-sm font-bold text-gray-600 whitespace-pre-line leading-relaxed">{{ consulta.tratamiento }}</p>
+            </div>
+            
+            <div class="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-400 font-bold">
+              <span *ngIf="consulta.peso">⚖️ Peso: {{ consulta.peso }} kg</span>
+              <span *ngIf="consulta.temperatura">🌡️ Temp: {{ consulta.temperatura }} °C</span>
+              <span *ngIf="consulta.frecuenciaCardiaca">❤️ F.C.: {{ consulta.frecuenciaCardiaca }} bpm</span>
+              <span *ngIf="consulta.frecuenciaRespiratoria">🫁 F.R.: {{ consulta.frecuenciaRespiratoria }} rpm</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div *ngIf="!isLoadingHistorial && historialConsultas.length === 0" class="text-center p-8 bg-slate-50 rounded-3xl">
+        <p class="text-gray-400 font-extrabold">No hay consultas registradas para esta mascota.</p>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Modal para Solicitar Re-internación -->
+  <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" *ngIf="isReingresoModalOpen">
+    <div class="bg-white rounded-3xl max-w-lg w-full shadow-2xl overflow-hidden font-nunito border border-gray-100 animate-fade-in flex flex-col">
+      <div class="bg-red-500 text-white p-6">
+        <h3 class="text-2xl font-black flex items-center gap-2">
+          <span>🚨</span> Solicitar Re-internación Médica
+        </h3>
+        <p class="text-red-100 font-medium mt-1">
+          Por favor, cuéntanos qué está sucediendo con tu mascota para alertar inmediatamente a los doctores.
+        </p>
+      </div>
+
+      <div class="p-6 flex-1 flex flex-col gap-4">
+        <div>
+          <label class="block text-sm font-black text-gray-700 uppercase tracking-wide mb-2">Mascota a re-internar:</label>
+          <div class="bg-slate-100 px-4 py-3 rounded-2xl font-extrabold text-gray-700 border border-slate-200">
+            🐾 {{ mascotaSeleccionada?.nombre }} ({{ mascotaSeleccionada?.sexo }}, {{ mascotaSeleccionada?.especie }})
+          </div>
+        </div>
+
+        <div class="flex-1 flex flex-col">
+          <label class="block text-sm font-black text-gray-700 uppercase tracking-wide mb-2">Síntomas / Motivos Notados:</label>
+          <textarea [(ngModel)]="notasClienteReingreso" 
+                    placeholder="Escribe aquí los síntomas que tiene la mascota, cambios de comportamiento o motivos del reingreso..."
+                    class="w-full flex-1 min-h-[140px] px-4 py-3 rounded-2xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-red-400 focus:border-transparent font-bold text-gray-700 placeholder-gray-400 resize-none"></textarea>
+        </div>
+      </div>
+
+      <div class="bg-slate-50 px-6 py-4 flex justify-end gap-3 border-t border-slate-100">
+        <button (click)="cerrarReingresoModal()" 
+                [disabled]="isEnviandoReingreso"
+                class="border-2 border-gray-300 hover:bg-slate-100 text-gray-600 font-extrabold px-6 py-2.5 rounded-2xl transition-all">
+          Cancelar
+        </button>
+        <button (click)="enviarSolicitudReingreso()" 
+                [disabled]="isEnviandoReingreso"
+                class="bg-red-500 hover:bg-red-600 text-white font-extrabold px-6 py-2.5 rounded-2xl shadow-md transition-all flex items-center gap-2">
+          <span *ngIf="isEnviandoReingreso" class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></span>
+          {{ isEnviandoReingreso ? 'Enviando...' : 'Enviar Solicitud Urgente' }}
+        </button>
       </div>
     </div>
   </div>
 
-  <!-- Calendario GitHub Style -->
-  <div class="bg-white p-8 rounded-3xl shadow-sm border border-gray-100">
-    <h3 class="text-xl font-bold text-gray-800 mb-2">Estado de Salud (Últimos 120 días)</h3>
-    <p class="text-sm text-gray-500 mb-6 flex gap-4">
-      <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-emerald-400"></span> Excelente</span>
-      <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-yellow-400"></span> Regular</span>
-      <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-red-500"></span> Malestar</span>
-    </p>
+  <!-- Area Imprimible para la Receta (Oculto en pantalla, visible en print) -->
+  <div class="printable-area" *ngIf="prescripcionParaImprimir">
+    <div class="p-8 border-4 border-double border-gray-400 rounded-2xl bg-white text-black font-serif">
+      <div class="text-center mb-8">
+        <h1 class="text-4xl font-extrabold tracking-tight uppercase">PET HOUSE</h1>
+        <p class="text-sm font-bold uppercase tracking-wider text-gray-500 mt-1">Clínica & Hospital Veterinario</p>
+        <p class="text-xs text-gray-400 mt-0.5">Av. de las Mascotas 1234, Ciudad del Sol</p>
+      </div>
 
-    <div class="flex flex-wrap gap-1.5">
-      <div *ngFor="let day of healthCalendar" 
-           [class]="getColor(day) + ' w-4 h-4 rounded-sm transition-transform hover:scale-125 cursor-pointer'"
-           [title]="day === 0 ? 'Sano' : day === 1 ? 'Regular' : 'Malestar'">
+      <div class="border-t-2 border-b-2 border-black py-4 mb-6 grid grid-cols-2 gap-y-2 text-sm">
+        <div><strong>Mascota (Paciente):</strong> {{ mascotaSeleccionada?.nombre }} ({{ mascotaSeleccionada?.especie }})</div>
+        <div class="text-right"><strong>Fecha de Emisión:</strong> {{ prescripcionParaImprimir.fecha }}</div>
+        <div><strong>Veterinario a Cargo:</strong> Dr/a. {{ prescripcionParaImprimir.veterinarioNombre }}</div>
+        <div class="text-right"><strong>Código de Control:</strong> PH-REC-{{ prescripcionParaImprimir.id }}-{{ prescripcionParaImprimir.consultaId }}</div>
+      </div>
+
+      <h2 class="text-xl font-bold uppercase border-b border-gray-300 pb-2 mb-4 tracking-wide text-gray-800">Receta Médica y Prescripción</h2>
+      
+      <table class="w-full text-left border-collapse text-sm mb-6">
+        <thead>
+          <tr class="border-b-2 border-gray-400 uppercase text-xs text-gray-600 bg-gray-50">
+            <th class="py-2.5 pr-2">Medicamento</th>
+            <th class="py-2.5 px-2">Dosis</th>
+            <th class="py-2.5 px-2">Frecuencia</th>
+            <th class="py-2.5 px-2">Duración</th>
+            <th class="py-2.5 pl-2">Indicación de Uso</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let det of prescripcionParaImprimir.detalles" class="border-b border-gray-300">
+            <td class="py-3 pr-2 font-bold">{{ det.insumoNombre }}</td>
+            <td class="py-3 px-2">{{ det.dosis }}</td>
+            <td class="py-3 px-2">{{ det.frecuencia }}</td>
+            <td class="py-3 px-2">{{ det.duracion }}</td>
+            <td class="py-3 pl-2 text-gray-600 italic text-xs">{{ det.instrucciones || 'Según criterio' }}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="bg-gray-50 p-4 rounded-xl border border-gray-200 text-sm mb-12" *ngIf="prescripcionParaImprimir.observaciones">
+        <strong class="block uppercase text-xs tracking-wider text-gray-700 mb-1">Notas / Cuidados Adicionales:</strong>
+        <p class="leading-relaxed whitespace-pre-line text-gray-700 font-medium">{{ prescripcionParaImprimir.observaciones }}</p>
+      </div>
+
+      <div class="flex justify-between items-center mt-16 pt-8 border-t border-gray-300">
+        <div class="text-xs text-gray-400">
+          Documento válido para adquisición de insumos clínicos.
+        </div>
+        <div class="text-center w-64 border-t border-gray-400 pt-2 text-xs font-bold uppercase text-gray-600">
+          Firma y Sello del Profesional<br>Dr/a. {{ prescripcionParaImprimir.veterinarioNombre }}
+        </div>
       </div>
     </div>
   </div>

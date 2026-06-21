@@ -13,4 +13,16 @@ export class MascotaService {
   obtenerTodas(): Observable<MascotaResponse[]> {
     return this.http.get<MascotaResponse[]>(this.API_URL);
   }
+
+  obtenerMisMascotas(): Observable<MascotaResponse[]> {
+    return this.http.get<MascotaResponse[]>(`${this.API_URL}/mis-mascotas`);
+  }
+
+  obtenerHistorialClinico(mascotaId: number): Observable<any> {
+    return this.http.get<any>(`${this.API_URL}/${mascotaId}/historial-clinico`);
+  }
+
+  obtenerPrescripciones(mascotaId: number): Observable<any[]> {
+    return this.http.get<any[]>(`${this.API_URL}/${mascotaId}/prescripciones`);
+  }
 }

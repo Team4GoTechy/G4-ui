@@ -1,4 +1,5 @@
 <div class="space-y-6 animate-fade-in-up">
+  
   <!-- Header y Acciones -->
   <div class="flex justify-between items-center bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
     <div>
@@ -13,6 +14,32 @@
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" /></svg>
         Ingresar Paciente
       </button>
+    </div>
+  </div>
+
+  <!-- Solicitudes de Reingreso del Propietario -->
+  <div *ngIf="solicitudesReingreso.length > 0" class="bg-amber-50 border border-amber-200 rounded-3xl p-6 shadow-sm mb-6">
+    <h3 class="text-lg font-black text-amber-900 flex items-center gap-2 mb-4">
+      <span>🚨</span> Solicitudes de Reingreso de Propietarios
+    </h3>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div *ngFor="let req of solicitudesReingreso" class="bg-white p-5 rounded-2xl border border-amber-100 shadow-sm flex flex-col justify-between gap-4">
+        <div>
+          <div class="flex justify-between items-start mb-2">
+            <h4 class="font-extrabold text-gray-800 text-lg">🐾 {{ req.mascotaNombre }}</h4>
+            <span class="bg-amber-100 text-amber-800 font-bold text-[10px] px-2.5 py-1 rounded-lg uppercase tracking-wider">Reingreso</span>
+          </div>
+          <p class="text-xs font-bold text-gray-400 uppercase">Solicitado por Dueño</p>
+          <div class="mt-3 bg-amber-50/50 p-3 rounded-xl border border-amber-100/60">
+            <span class="text-[10px] uppercase font-bold text-amber-600 tracking-wide block mb-1">Motivo del Dueño:</span>
+            <p class="text-xs text-gray-700 font-bold italic">"{{ req.notasCliente }}"</p>
+          </div>
+        </div>
+        <button (click)="abrirAprobarReingresoModal(req)" 
+                class="w-full bg-amber-500 hover:bg-amber-600 text-white font-extrabold py-2 px-4 rounded-xl text-sm transition-all shadow-sm">
+          Aceptar Reingreso y Asignar Jaula
+        </button>
+      </div>
     </div>
   </div>
 
@@ -59,7 +86,7 @@
           <button (click)="abrirEvolucionModal(int)" class="flex-1 bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold py-2 rounded-xl text-sm transition-colors border border-blue-200">
             + Evolución
           </button>
-          <button (click)="darDeAlta(int.id)" class="flex-1 bg-green-50 hover:bg-green-100 text-green-700 font-bold py-2 rounded-xl text-sm transition-colors border border-green-200">
+          <button (click)="abrirAltaModal(int)" class="flex-1 bg-green-50 hover:bg-green-100 text-green-700 font-bold py-2 rounded-xl text-sm transition-colors border border-green-200">
             Dar de Alta
           </button>
         </div>
@@ -167,6 +194,55 @@
       <div class="pt-4 flex justify-end gap-3 border-t border-gray-100 mt-4">
         <button type="button" (click)="cerrarEvolucionModal()" class="px-5 py-2 text-gray-600 font-bold rounded-xl hover:bg-gray-100 transition-colors">Cancelar</button>
         <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-extrabold px-6 py-2 rounded-xl shadow-md transition-colors">Guardar Nota</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal Alta Médica con Cuidados en Casa -->
+<div *ngIf="isAltaModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+  <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" (click)="cerrarAltaModal()"></div>
+  <div class="relative bg-white rounded-3xl shadow-2xl w-full max-w-md p-8 animate-zoom-in border-t-8 border-green-500">
+    <h3 class="text-xl font-extrabold text-green-900 mb-1">Confirmar Alta Médica</h3>
+    <p class="text-sm font-bold text-gray-500 mb-6">Mascota: {{ internacionAltaSeleccionada?.mascotaNombre }} | Jaula: {{ internacionAltaSeleccionada?.jaulaId }}</p>
+    
+    <form (ngSubmit)="guardarAlta()" #altaForm="ngForm" class="space-y-4">
+      <div>
+        <label class="block text-sm font-bold text-gray-700 mb-1">Indicaciones de Cuidados en Casa <span class="text-red-500">*</span></label>
+        <textarea [(ngModel)]="indicacionesAlta" name="indicacionesAlta" rows="4" required placeholder="Ej. Reposo absoluto por 3 días, darle 1 pastilla de amoxicilina cada 12 horas, mantener la herida limpia..."
+                  class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2 outline-none focus:border-green-500 font-medium resize-none"></textarea>
+      </div>
+
+      <div class="pt-4 flex justify-end gap-3 border-t border-gray-100 mt-4">
+        <button type="button" (click)="cerrarAltaModal()" class="px-5 py-2 text-gray-600 font-bold rounded-xl hover:bg-gray-100 transition-colors">Cancelar</button>
+        <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-extrabold px-6 py-2 rounded-xl shadow-md transition-colors">Confirmar Alta y Salida</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal Aprobar Reingreso Solicitado -->
+<div *ngIf="isAprobarReingresoModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+  <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" (click)="cerrarAprobarReingresoModal()"></div>
+  <div class="relative bg-white rounded-3xl shadow-2xl w-full max-w-md p-8 animate-zoom-in border-t-8 border-amber-500">
+    <h3 class="text-xl font-extrabold text-amber-900 mb-1">Confirmar Reingreso de Paciente</h3>
+    <p class="text-sm font-bold text-gray-500 mb-6">Mascota: {{ reingresoSeleccionado?.mascotaNombre }}</p>
+    
+    <form (ngSubmit)="guardarConfirmacionReingreso()" #reingresoForm="ngForm" class="space-y-4">
+      <div class="bg-amber-50 p-4 rounded-xl border border-amber-100 mb-4">
+        <span class="text-xs uppercase font-extrabold text-amber-600 tracking-wide block mb-1">Notas reportadas por el dueño:</span>
+        <p class="text-xs font-bold text-gray-700 italic">"{{ reingresoSeleccionado?.notasCliente }}"</p>
+      </div>
+
+      <div>
+        <label class="block text-sm font-bold text-gray-700 mb-1">Asignar Jaula ID <span class="text-red-500">*</span></label>
+        <input type="text" [(ngModel)]="jaulaReingreso" name="jaulaReingreso" required placeholder="Ej. B-04"
+               class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2 outline-none focus:border-amber-500 font-bold">
+      </div>
+
+      <div class="pt-4 flex justify-end gap-3 border-t border-gray-100 mt-4">
+        <button type="button" (click)="cerrarAprobarReingresoModal()" class="px-5 py-2 text-gray-600 font-bold rounded-xl hover:bg-gray-100 transition-colors">Cancelar</button>
+        <button type="submit" class="bg-amber-500 hover:bg-amber-600 text-white font-extrabold px-6 py-2 rounded-xl shadow-md transition-colors">Ingresar y Activar</button>
       </div>
     </form>
   </div>

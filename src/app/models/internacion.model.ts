@@ -35,5 +35,7 @@ export interface InternacionResponse {
   jaulaId: string;
   estado: string; // 'ACTIVA' | 'DADA_DE_ALTA'
   notas?: string;
+  indicacionesAlta?: string;
+  notasCliente?: string;
   evoluciones: EvolucionResponse[];
 }

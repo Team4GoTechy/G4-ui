@@ -22,7 +22,23 @@ export class InternacionService {
     return this.http.post<EvolucionResponse>(`${this.API_URL}/${internacionId}/evolucion`, data);
   }
 
-  darDeAlta(internacionId: number): Observable<InternacionResponse> {
-    return this.http.patch<InternacionResponse>(`${this.API_URL}/${internacionId}/alta`, {});
+  darDeAlta(internacionId: number, indicacionesAlta: string): Observable<InternacionResponse> {
+    return this.http.patch<InternacionResponse>(`${this.API_URL}/${internacionId}/alta`, { indicacionesAlta });
+  }
+
+  listarPendientesReingreso(): Observable<InternacionResponse[]> {
+    return this.http.get<InternacionResponse[]>(`${this.API_URL}/pendientes-reingreso`);
+  }
+
+  obtenerPorMascota(mascotaId: number): Observable<InternacionResponse[]> {
+    return this.http.get<InternacionResponse[]>(`${this.API_URL}/mascota/${mascotaId}`);
+  }
+
+  solicitarReingreso(mascotaId: number, notasCliente: string): Observable<InternacionResponse> {
+    return this.http.post<InternacionResponse>(`${this.API_URL}/solicitar-reingreso`, { mascotaId, notasCliente });
+  }
+
+  confirmarReingreso(internacionId: number, jaulaId: string): Observable<InternacionResponse> {
+    return this.http.patch<InternacionResponse>(`${this.API_URL}/${internacionId}/confirmar-reingreso?jaulaId=${encodeURIComponent(jaulaId)}`, {});
   }
 }
