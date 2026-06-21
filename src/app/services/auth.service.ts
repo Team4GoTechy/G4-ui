@@ -100,4 +100,9 @@ export class AuthService {
   getCurrentUser(): User | null {
     return this.currentUserSubject.value;
   }
+
+  actualizarUsuarioLocal(user: User) {
+    this.cookieService.set('currentUser', JSON.stringify(user), { path: '/', secure: true, sameSite: 'Strict' });
+    this.currentUserSubject.next(user);
+  }
 }

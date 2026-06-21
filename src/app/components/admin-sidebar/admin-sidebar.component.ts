@@ -82,11 +82,19 @@ import { AuthService } from '../../services/auth.service';
               </a>
             </li>
             <li>
-              <a routerLink="/admin/clientes" routerLinkActive="bg-sky-50 text-sky-500 font-bold"
+              <a routerLink="/admin/insumos" routerLinkActive="bg-sky-50 text-sky-500 font-bold"
                  class="flex items-center px-4 py-3 text-gray-600 rounded-2xl hover:bg-gray-50 transition-colors"
-                 [title]="isCollapsed ? 'Clientes y Mascotas' : ''">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 shrink-0" [ngClass]="!isCollapsed ? 'mr-3' : 'mx-auto'" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
-                <span *ngIf="!isCollapsed">Clientes y Mascotas</span>
+                 [title]="isCollapsed ? 'Gestión de Insumos' : ''">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 shrink-0" [ngClass]="!isCollapsed ? 'mr-3' : 'mx-auto'" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
+                <span *ngIf="!isCollapsed">Gestión de Insumos</span>
+              </a>
+            </li>
+            <li>
+              <a routerLink="/admin/proveedores" routerLinkActive="bg-sky-50 text-sky-500 font-bold"
+                 class="flex items-center px-4 py-3 text-gray-600 rounded-2xl hover:bg-gray-50 transition-colors"
+                 [title]="isCollapsed ? 'Proveedores' : ''">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 shrink-0" [ngClass]="!isCollapsed ? 'mr-3' : 'mx-auto'" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
+                <span *ngIf="!isCollapsed">Proveedores</span>
               </a>
             </li>
             <li>

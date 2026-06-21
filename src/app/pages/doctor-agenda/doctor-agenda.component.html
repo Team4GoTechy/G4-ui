@@ -1,0 +1,303 @@
+<div class="space-y-6 animate-fade-in-up">
+  <!-- Header -->
+  <div class="flex justify-between items-center bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
+    <div>
+      <h2 class="text-2xl font-extrabold text-gray-800 flex items-center gap-2">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+        Mi Agenda
+      </h2>
+      <p class="text-gray-500 font-medium mt-1">
+        {{ vistaModo === 'dia' ? 'Turnos programados para el día' : 'Calendario mensual de turnos' }}
+      </p>
+    </div>
+    
+    <div class="flex gap-4 items-center">
+      <!-- Selector de Vista -->
+      <div class="bg-gray-100 p-1 rounded-xl flex font-bold text-sm">
+        <button (click)="cambiarVista('dia')" 
+                class="px-4 py-2 rounded-lg transition-all"
+                [ngClass]="vistaModo === 'dia' ? 'bg-white shadow text-emerald-600' : 'text-gray-500 hover:text-gray-700'">
+          Día
+        </button>
+        <button (click)="cambiarVista('mes')" 
+                class="px-4 py-2 rounded-lg transition-all"
+                [ngClass]="vistaModo === 'mes' ? 'bg-white shadow text-emerald-600' : 'text-gray-500 hover:text-gray-700'">
+          Mes
+        </button>
+      </div>
+
+      <!-- Fecha / Mes Selector -->
+      <div *ngIf="vistaModo === 'dia'" class="relative">
+        <input type="date" [value]="fechaActual" (change)="cambiarFecha($event)"
+               class="bg-gray-50 border border-gray-200 text-gray-700 font-bold rounded-xl px-4 py-3 outline-none focus:border-emerald-500 cursor-pointer">
+      </div>
+      <div *ngIf="vistaModo === 'mes'" class="flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-xl px-2 py-1">
+        <button (click)="cambiarMes(-1)" class="p-2 hover:bg-gray-200 rounded-lg text-gray-600">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
+        </button>
+        <span class="font-bold text-gray-700 min-w-[120px] text-center capitalize">{{ getNombreMesActual() }}</span>
+        <button (click)="cambiarMes(1)" class="p-2 hover:bg-gray-200 rounded-lg text-gray-600">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+        </button>
+      </div>
+
+      <button (click)="abrirModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold py-3 px-6 rounded-xl shadow-lg shadow-emerald-200 transition-transform hover:-translate-y-0.5 active:translate-y-0 flex items-center gap-2">
+        <span>+ Nueva Cita</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="flex justify-center items-center py-12">
+    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600"></div>
+  </div>
+
+  <!-- ================= VISTA DIARIA (KANBAN) ================= -->
+  <div *ngIf="!loading && vistaModo === 'dia'">
+    <div *ngIf="citasDelDia.length === 0" class="bg-white rounded-3xl p-12 text-center border border-gray-100 shadow-sm mb-6">
+      <div class="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+      </div>
+      <h3 class="text-xl font-bold text-gray-800">No hay citas</h3>
+      <p class="text-gray-500 font-medium">No tenés turnos programados para este día.</p>
+    </div>
+
+    <!-- Kanban Board -->
+    <div class="overflow-x-auto pb-6 custom-scrollbar w-full">
+      <div class="grid grid-cols-4 gap-4 min-w-[800px] w-full">
+        
+        <!-- Columna PENDIENTE -->
+        <div class="flex flex-col" (dragover)="allowDrop($event)" (drop)="drop($event, 'PENDIENTE')">
+          <div class="bg-orange-100 text-orange-800 font-extrabold px-3 py-2 text-sm rounded-t-xl flex justify-between items-center border border-orange-200 border-b-0 shadow-sm">
+            Pendientes
+            <span class="bg-white text-orange-600 px-1.5 py-0.5 rounded text-xs shadow-sm">{{ getCitasPorEstado('PENDIENTE').length }}</span>
+          </div>
+          <div class="bg-gray-50/50 border-x border-b border-gray-200 rounded-b-xl p-2 flex-1 min-h-[300px] flex flex-col gap-2 transition-colors hover:bg-orange-50/30">
+            <div *ngFor="let cita of getCitasPorEstado('PENDIENTE')" 
+                 draggable="true" (dragstart)="drag($event, cita)" (click)="abrirDetalleCita(cita)"
+                 class="bg-white p-3 rounded-xl shadow-sm border border-orange-200 cursor-pointer hover:shadow-md transition-all group hover:-translate-y-0.5">
+              <div class="flex justify-between items-center mb-1">
+                <span class="text-[10px] font-extrabold px-1.5 py-0.5 rounded tracking-wider bg-orange-50 text-orange-600 border border-orange-200">{{ cita.tipoCita }}</span>
+                <p class="text-sm font-black text-gray-800">{{ formatHora(cita.fechaHora) }}</p>
+              </div>
+              <h4 class="font-extrabold text-gray-800 text-base leading-tight truncate">{{ cita.mascotaNombre || 'Mascota #' + cita.mascotaId }}</h4>
+            </div>
+          </div>
+        </div>
+
+        <!-- Columna CONFIRMADA -->
+        <div class="flex flex-col" (dragover)="allowDrop($event)" (drop)="drop($event, 'CONFIRMADA')">
+          <div class="bg-blue-100 text-blue-800 font-extrabold px-3 py-2 text-sm rounded-t-xl flex justify-between items-center border border-blue-200 border-b-0 shadow-sm">
+            Confirmadas
+            <span class="bg-white text-blue-600 px-1.5 py-0.5 rounded text-xs shadow-sm">{{ getCitasPorEstado('CONFIRMADA').length }}</span>
+          </div>
+          <div class="bg-gray-50/50 border-x border-b border-gray-200 rounded-b-xl p-2 flex-1 min-h-[300px] flex flex-col gap-2 transition-colors hover:bg-blue-50/30">
+            <div *ngFor="let cita of getCitasPorEstado('CONFIRMADA')" 
+                 draggable="true" (dragstart)="drag($event, cita)" (click)="abrirDetalleCita(cita)"
+                 class="bg-white p-3 rounded-xl shadow-sm border border-blue-200 cursor-pointer hover:shadow-md transition-all group hover:-translate-y-0.5">
+              <div class="flex justify-between items-center mb-1">
+                <span class="text-[10px] font-extrabold px-1.5 py-0.5 rounded tracking-wider bg-blue-50 text-blue-600 border border-blue-200">{{ cita.tipoCita }}</span>
+                <p class="text-sm font-black text-gray-800">{{ formatHora(cita.fechaHora) }}</p>
+              </div>
+              <h4 class="font-extrabold text-gray-800 text-base leading-tight truncate">{{ cita.mascotaNombre || 'Mascota #' + cita.mascotaId }}</h4>
+            </div>
+          </div>
+        </div>
+
+        <!-- Columna COMPLETADA -->
+        <div class="flex flex-col" (dragover)="allowDrop($event)" (drop)="drop($event, 'COMPLETADA')">
+          <div class="bg-emerald-100 text-emerald-800 font-extrabold px-3 py-2 text-sm rounded-t-xl flex justify-between items-center border border-emerald-200 border-b-0 shadow-sm">
+            Completadas
+            <span class="bg-white text-emerald-600 px-1.5 py-0.5 rounded text-xs shadow-sm">{{ getCitasPorEstado('COMPLETADA').length }}</span>
+          </div>
+          <div class="bg-gray-50/50 border-x border-b border-gray-200 rounded-b-xl p-2 flex-1 min-h-[300px] flex flex-col gap-2 transition-colors hover:bg-emerald-50/30">
+            <div *ngFor="let cita of getCitasPorEstado('COMPLETADA')" 
+                 draggable="true" (dragstart)="drag($event, cita)" (click)="abrirDetalleCita(cita)"
+                 class="bg-white p-3 rounded-xl shadow-sm border border-emerald-200 cursor-pointer hover:shadow-md transition-all group hover:-translate-y-0.5 opacity-80">
+              <div class="flex justify-between items-center mb-1">
+                <span class="text-[10px] font-extrabold px-1.5 py-0.5 rounded tracking-wider bg-emerald-50 text-emerald-600 border border-emerald-200">{{ cita.tipoCita }}</span>
+                <p class="text-sm font-black text-gray-800">{{ formatHora(cita.fechaHora) }}</p>
+              </div>
+              <h4 class="font-extrabold text-gray-800 text-base leading-tight truncate">{{ cita.mascotaNombre || 'Mascota #' + cita.mascotaId }}</h4>
+            </div>
+          </div>
+        </div>
+
+        <!-- Columna CANCELADA -->
+        <div class="flex flex-col" (dragover)="allowDrop($event)" (drop)="drop($event, 'CANCELADA')">
+          <div class="bg-red-100 text-red-800 font-extrabold px-3 py-2 text-sm rounded-t-xl flex justify-between items-center border border-red-200 border-b-0 shadow-sm">
+            Canceladas
+            <span class="bg-white text-red-600 px-1.5 py-0.5 rounded text-xs shadow-sm">{{ getCitasPorEstado('CANCELADA').length }}</span>
+          </div>
+          <div class="bg-gray-50/50 border-x border-b border-gray-200 rounded-b-xl p-2 flex-1 min-h-[300px] flex flex-col gap-2 transition-colors hover:bg-red-50/30">
+            <div *ngFor="let cita of getCitasPorEstado('CANCELADA')" 
+                 draggable="true" (dragstart)="drag($event, cita)" (click)="abrirDetalleCita(cita)"
+                 class="bg-gray-50 p-3 rounded-xl shadow-sm border border-red-200 cursor-pointer hover:shadow-md transition-all group hover:-translate-y-0.5 opacity-70">
+              <div class="flex justify-between items-center mb-1">
+                <span class="text-[10px] font-extrabold px-1.5 py-0.5 rounded tracking-wider bg-red-50 text-red-600 border border-red-200">{{ cita.tipoCita }}</span>
+                <p class="text-sm font-black text-gray-800 line-through decoration-red-400">{{ formatHora(cita.fechaHora) }}</p>
+              </div>
+              <h4 class="font-extrabold text-gray-600 text-base leading-tight truncate">{{ cita.mascotaNombre || 'Mascota #' + cita.mascotaId }}</h4>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= VISTA MENSUAL ================= -->
+  <div *ngIf="!loading && vistaModo === 'mes'" class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 animate-zoom-in">
+    <!-- Grid de Días de la Semana -->
+    <div class="grid grid-cols-7 gap-4 mb-4">
+      <div *ngFor="let dia of ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb']" class="text-center font-extrabold text-sm text-gray-400 uppercase tracking-wider">
+        {{ dia }}
+      </div>
+    </div>
+    
+    <!-- Grid del Calendario -->
+    <div class="grid grid-cols-7 gap-2 md:gap-4">
+      <div *ngFor="let dia of diasCalendario" 
+           class="min-h-[100px] border rounded-2xl p-2 relative transition-all"
+           [ngClass]="{
+             'bg-white border-gray-200 hover:border-emerald-300': dia.isCurrentMonth,
+             'bg-gray-50 border-gray-100 text-gray-400 opacity-60': !dia.isCurrentMonth
+           }"
+           (click)="dia.isCurrentMonth && seleccionarDiaDesdeCalendario(dia.fecha)"
+           [class.cursor-pointer]="dia.isCurrentMonth">
+        
+        <!-- Fecha del día -->
+        <div class="text-right mb-1">
+          <span class="inline-flex items-center justify-center w-6 h-6 rounded-full font-bold text-sm"
+                [ngClass]="{'bg-emerald-100 text-emerald-700': dia.isCurrentMonth && dia.fecha.toISOString().split('T')[0] === (fechaActual || '') }">
+            {{ dia.fecha.getDate() }}
+          </span>
+        </div>
+        
+        <!-- Indicadores de Citas -->
+        <div class="space-y-1 mt-1 overflow-hidden h-[60px]">
+          <div *ngFor="let cita of dia.citas | slice:0:3" 
+               class="text-[10px] font-bold px-1.5 py-0.5 rounded truncate"
+               [ngClass]="{
+                 'bg-emerald-50 text-emerald-600': cita.estado === 'COMPLETADA',
+                 'bg-orange-50 text-orange-600': cita.estado === 'PENDIENTE',
+                 'bg-gray-100 text-gray-500': cita.estado === 'CANCELADA' || cita.estado === 'NO_ASISTIO'
+               }"
+               [title]="formatHora(cita.fechaHora) + ' - ' + cita.mascotaNombre">
+            {{ formatHora(cita.fechaHora) }} {{ cita.mascotaNombre }}
+          </div>
+          <div *ngIf="dia.citas.length > 3" class="text-[10px] font-bold text-gray-400 text-center">
+            +{{ dia.citas.length - 3 }} más
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Modal Nueva Cita -->
+<div *ngIf="isModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+  <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" (click)="cerrarModal()"></div>
+  <div class="relative bg-white rounded-3xl shadow-2xl w-full max-w-md p-8 animate-zoom-in">
+    <div class="flex justify-between items-center mb-6">
+      <h3 class="text-2xl font-extrabold text-gray-800">Agendar Turno</h3>
+      <button (click)="cerrarModal()" class="text-gray-400 hover:text-gray-600">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+      </button>
+    </div>
+
+    <form (ngSubmit)="guardarCita()" #citaForm="ngForm" class="space-y-4">
+      <div>
+        <label class="block text-sm font-bold text-gray-700 mb-1">Mascota <span class="text-red-500">*</span></label>
+        <div class="relative">
+          <select [(ngModel)]="nuevaCita.mascotaId" name="mascotaId" required
+                  class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-emerald-500 font-bold appearance-none cursor-pointer">
+            <option [ngValue]="0" disabled>Seleccionar mascota...</option>
+            <option *ngFor="let m of mascotasDisponibles" [ngValue]="m.id">{{ m.nombre }}</option>
+          </select>
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400 absolute right-4 top-3.5 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+          </svg>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-bold text-gray-700 mb-1">Tipo de Cita</label>
+          <select [(ngModel)]="nuevaCita.tipoCita" name="tipoCita" required
+                  class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-emerald-500 font-bold">
+            <option *ngFor="let tipo of tiposCita" [value]="tipo">{{tipo}}</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-bold text-gray-700 mb-1">Duración (min)</label>
+          <input type="number" [(ngModel)]="nuevaCita.duracionMinutos" name="duracion" required
+                 class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-emerald-500 font-bold">
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-sm font-bold text-gray-700 mb-1">Fecha y Hora <span class="text-red-500">*</span></label>
+        <input type="datetime-local" [(ngModel)]="nuevaCita.fechaHora" name="fechaHora" required [min]="fechaMinima"
+               class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-emerald-500 font-bold text-gray-700">
+      </div>
+
+      <div>
+        <label class="block text-sm font-bold text-gray-700 mb-1">Notas adicionales</label>
+        <textarea [(ngModel)]="nuevaCita.notas" name="notas" rows="2"
+                  class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-emerald-500 font-medium resize-none"
+                  placeholder="Ej. Paciente con historial cardíaco..."></textarea>
+      </div>
+
+      <div class="pt-4 mt-6 border-t border-gray-100">
+        <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold py-4 rounded-xl shadow-lg shadow-emerald-200 transition-colors text-lg">
+          Agendar Turno
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal Detalle de Cita -->
+<div *ngIf="isDetalleModalOpen && citaSeleccionada" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+  <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" (click)="cerrarDetalleCita()"></div>
+  <div class="relative bg-white rounded-3xl shadow-2xl w-full max-w-md p-8 animate-zoom-in">
+    <div class="flex justify-between items-start mb-6 border-b border-gray-100 pb-4">
+      <div>
+        <h3 class="text-2xl font-black text-gray-800">{{ citaSeleccionada.mascotaNombre }}</h3>
+        <p class="text-emerald-600 font-bold text-sm">{{ formatHora(citaSeleccionada.fechaHora) }} - {{ getTurno(citaSeleccionada.fechaHora) }}</p>
+      </div>
+      <button (click)="cerrarDetalleCita()" class="text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100 p-2 rounded-full transition-colors">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+      </button>
+    </div>
+
+    <div class="space-y-4">
+      <div class="bg-gray-50 p-4 rounded-2xl flex justify-between items-center border border-gray-100">
+        <div class="text-sm font-bold text-gray-500">Tipo de Turno</div>
+        <div class="text-sm font-black px-3 py-1 rounded-lg border tracking-wider bg-white shadow-sm">{{ citaSeleccionada.tipoCita }}</div>
+      </div>
+
+      <div class="bg-gray-50 p-4 rounded-2xl flex justify-between items-center border border-gray-100">
+        <div class="text-sm font-bold text-gray-500">Duración</div>
+        <div class="text-sm font-black text-gray-800">{{ citaSeleccionada.duracionMinutos }} min</div>
+      </div>
+
+      <div class="bg-gray-50 p-4 rounded-2xl flex items-center gap-3 border border-gray-100">
+        <div class="bg-white p-2 rounded-xl shadow-sm text-emerald-500">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+        </div>
+        <div>
+          <div class="text-xs font-bold text-gray-400 uppercase tracking-wider">Dueño</div>
+          <div class="font-black text-gray-800">{{ citaSeleccionada.clienteNombre }}</div>
+        </div>
+      </div>
+
+      <div *ngIf="citaSeleccionada.notas" class="bg-gray-50 p-4 rounded-2xl border border-gray-100">
+        <div class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Notas / Motivo</div>
+        <p class="text-sm font-medium text-gray-600">"{{ citaSeleccionada.notas }}"</p>
+      </div>
+    </div>
+  </div>
+</div>

@@ -16,12 +16,14 @@ import { DoctorHomeComponent } from './pages/doctor-home/doctor-home.component';
 import { AdminProductosComponent } from './pages/admin-productos/admin-productos.component';
 import { AdminServiciosComponent } from './pages/admin-servicios/admin-servicios.component';
 import { AdminVeterinariosComponent } from './pages/admin-veterinarios/admin-veterinarios.component';
-import { AdminClientesComponent } from './pages/admin-clientes/admin-clientes.component';
+import { AdminInsumosComponent } from './pages/admin-insumos/admin-insumos.component';
+import { AdminProveedoresComponent } from './pages/admin-proveedores/admin-proveedores.component';
 import { AdminSolicitudesComponent } from './pages/admin-solicitudes/admin-solicitudes.component';
 import { DoctorHistoriasComponent } from './pages/doctor-historias/doctor-historias.component';
-import { DoctorVacunacionComponent } from './pages/doctor-vacunacion/doctor-vacunacion.component';
+import { DoctorInternacionesComponent } from './pages/doctor-internaciones/doctor-internaciones.component';
 import { DoctorInventarioComponent } from './pages/doctor-inventario/doctor-inventario.component';
 import { DoctorSolicitudesComponent } from './pages/doctor-solicitudes/doctor-solicitudes.component';
+import { DoctorAgendaComponent } from './pages/doctor-agenda/doctor-agenda.component';
 
 export const routes: Routes = [
   { 
@@ -56,7 +58,8 @@ export const routes: Routes = [
       { path: 'productos', component: AdminProductosComponent },
       { path: 'servicios', component: AdminServiciosComponent },
       { path: 'veterinarios', component: AdminVeterinariosComponent },
-      { path: 'clientes', component: AdminClientesComponent },
+      { path: 'insumos', component: AdminInsumosComponent },
+      { path: 'proveedores', component: AdminProveedoresComponent },
       { path: 'solicitudes', component: AdminSolicitudesComponent }
     ]
   },
@@ -65,8 +68,9 @@ export const routes: Routes = [
     component: DoctorLayoutComponent,
     children: [
       { path: '', component: DoctorHomeComponent, pathMatch: 'full' },
+      { path: 'agenda', component: DoctorAgendaComponent },
       { path: 'historias', component: DoctorHistoriasComponent },
-      { path: 'vacunacion', component: DoctorVacunacionComponent },
+      { path: 'internaciones', component: DoctorInternacionesComponent },
       { path: 'inventario', component: DoctorInventarioComponent },
       { path: 'solicitudes', component: DoctorSolicitudesComponent }
     ]

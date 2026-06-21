@@ -229,7 +229,7 @@ import { gsap } from 'gsap';
                     {{ p.categoria || 'Sin Categoría' }}
                   </span>
                 </td>
-                <td class="p-4 font-extrabold text-sky-600">\${{ p.precio | number:'1.2-2' }}</td>
+                <td class="p-4 font-extrabold text-sky-600">$ {{ p.precio | number:'1.2-2' }}</td>
                 <td class="p-4">
                   <span class="px-2.5 py-1 rounded-full text-xs font-bold"
                         [ngClass]="p.stock > 5 ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-red-50 text-red-600 border border-red-100'">

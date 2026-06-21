@@ -47,6 +47,14 @@ export class ProductService {
     return this.http.get<any[]>('http://localhost:8080/compras');
   }
 
+  getAllPurchases(): Observable<any[]> {
+    return this.http.get<any[]>('http://localhost:8080/compras/todas');
+  }
+
+  updatePurchaseStatus(id: number, estado: string): Observable<any> {
+    return this.http.put<any>(`http://localhost:8080/compras/${id}/estado?estado=${estado}`, {});
+  }
+
   uploadProductImage(file: File): Observable<any> {
     const formData = new FormData();
     formData.append('file', file);

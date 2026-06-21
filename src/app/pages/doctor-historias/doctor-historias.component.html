@@ -1,1 +1,413 @@
-<p>doctor-historias works!</p>
+<div class="space-y-6 animate-fade-in-up">
+  <!-- Header y Buscador -->
+  <div class="flex justify-between items-center bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
+    <div>
+      <h2 class="text-2xl font-extrabold text-emerald-900">Historias Clínicas</h2>
+      <p class="text-emerald-600 font-bold text-sm">Búsqueda y registro de pacientes</p>
+    </div>
+    <div class="relative flex items-center gap-2">
+      <select [(ngModel)]="busquedaId" (change)="buscarHistorial()"
+              class="bg-gray-50 border border-gray-200 px-4 py-2 rounded-xl text-sm w-64 focus:ring-2 focus:ring-emerald-400 outline-none font-bold text-emerald-900">
+        <option [ngValue]="0" disabled selected>Seleccione una mascota...</option>
+        <option *ngFor="let mascota of mascotasDisponibles" [ngValue]="mascota.id">
+          {{ mascota.nombre }}
+        </option>
+      </select>
+      <button (click)="buscarHistorial()" class="bg-emerald-600 hover:bg-emerald-700 text-white p-2 rounded-xl transition-colors">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="flex justify-center items-center py-12">
+    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600"></div>
+  </div>
+
+  <!-- Estado Inicial / Vacío -->
+  <div *ngIf="!loading && hasSearched && consultas.length === 0" class="bg-white rounded-3xl p-12 shadow-sm border border-gray-100 text-center">
+    <div class="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+    </div>
+    <h3 class="text-xl font-extrabold text-gray-800">Sin Historial</h3>
+    <p class="text-gray-500 font-medium mt-1 mb-6">No se encontraron consultas previas para esta mascota.</p>
+    <button (click)="abrirModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-6 rounded-xl shadow-md transition-colors">
+      + Redactar Primera Consulta
+    </button>
+  </div>
+
+  <!-- Ficha Clínica (Cuando hay historial) -->
+  <div *ngIf="!loading && consultas.length > 0" class="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 flex flex-col md:flex-row gap-8">
+    
+    <!-- Info Mascota (Lateral) -->
+    <div class="md:w-1/3 flex flex-col items-center border-r border-gray-100 pr-8">
+      <div class="w-32 h-32 bg-emerald-50 rounded-full border-4 border-emerald-100 flex items-center justify-center mb-4 p-4">
+        <!-- Placeholder genérico ya que no tenemos la foto en ConsultaResponse -->
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-emerald-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+        </svg>
+      </div>
+      <h3 class="text-2xl font-extrabold text-emerald-900">{{ consultas[0].mascotaNombre || 'Mascota ID: ' + mascotaActualId }}</h3>
+      
+      <div class="mt-4 w-full">
+        <button (click)="abrirModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-6 rounded-xl shadow-md transition-colors w-full flex justify-center items-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" /></svg>
+          Nueva Consulta
+        </button>
+      </div>
+    </div>
+
+    <!-- Lista de Consultas (Timeline) -->
+    <div class="md:w-2/3 space-y-6">
+      <h4 class="font-extrabold text-gray-800 text-lg border-b border-gray-100 pb-2">Historial de Consultas</h4>
+      
+      <div class="space-y-4 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
+        <div *ngFor="let consulta of consultas; let first = first" 
+             class="p-6 rounded-2xl border relative transition-all"
+             [ngClass]="first ? 'bg-emerald-50/50 border-emerald-200' : 'bg-gray-50/50 border-gray-100 hover:border-emerald-100'">
+          
+          <div class="absolute top-4 right-4 text-xs font-bold px-3 py-1 rounded-full"
+               [ngClass]="first ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-200 text-gray-600'">
+            {{ consulta.fechaCreacion | date:'dd MMM yyyy - HH:mm' }}
+          </div>
+          
+          <p class="font-extrabold text-gray-800 text-lg mb-1">{{ consulta.motivo }}</p>
+          <p class="text-xs font-bold text-emerald-600 mb-4 uppercase tracking-wider">Atendido por: {{ consulta.veterinarioNombre }}</p>
+          
+          <div class="grid grid-cols-2 gap-4 mb-4 text-sm">
+            <div>
+              <p class="text-gray-400 font-bold text-xs uppercase mb-1">Diagnóstico</p>
+              <p class="font-medium text-gray-700">{{ consulta.diagnostico }}</p>
+            </div>
+            <div>
+              <p class="text-gray-400 font-bold text-xs uppercase mb-1">Tratamiento</p>
+              <p class="font-medium text-gray-700">{{ consulta.tratamiento }}</p>
+            </div>
+          </div>
+          
+          <div class="flex justify-between items-end pt-3 border-t border-gray-100/50 mt-4">
+            <div class="flex flex-wrap gap-2">
+              <span class="bg-white border border-gray-200 text-gray-600 px-2 py-1 rounded-md text-[10px] font-bold">Peso: {{ consulta.peso }} kg</span>
+              <span class="bg-white border border-gray-200 text-gray-600 px-2 py-1 rounded-md text-[10px] font-bold">Temp: {{ consulta.temperatura }} °C</span>
+              <span class="bg-white border border-gray-200 text-gray-600 px-2 py-1 rounded-md text-[10px] font-bold">FC: {{ consulta.frecuenciaCardiaca }} lpm</span>
+            </div>
+            
+            <button (click)="abrirModalReceta(consulta)" class="bg-blue-50 hover:bg-blue-100 text-blue-700 px-4 py-1.5 rounded-lg text-xs font-bold transition-colors flex items-center gap-1 border border-blue-200 shadow-sm">
+              <span>💊</span> Receta
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Modal Ancho Nueva Consulta -->
+<div *ngIf="isModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+  <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" (click)="cerrarModal()"></div>
+  
+  <div class="relative bg-white rounded-3xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col animate-zoom-in">
+    <div class="bg-emerald-600 p-6 text-white flex justify-between items-center shrink-0">
+      <div>
+        <h3 class="text-2xl font-extrabold">Redactar Consulta Médica</h3>
+        <p class="text-emerald-100 text-sm font-medium">Mascota ID: {{ mascotaActualId }}</p>
+      </div>
+      <button (click)="cerrarModal()" class="text-white/70 hover:text-white transition-colors p-2 bg-emerald-700/50 rounded-full">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+
+    <!-- Scrollable Body -->
+    <div class="p-6 overflow-y-auto custom-scrollbar flex-1">
+      <form (ngSubmit)="guardarConsulta()" #consultaForm="ngForm" class="space-y-6">
+        
+        <!-- Motivo y Anamnesis -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label class="block text-sm font-bold text-gray-700 mb-1">Motivo de Consulta <span class="text-red-500">*</span></label>
+            <input type="text" [(ngModel)]="nuevaConsulta.motivo" name="motivo" required
+                   class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 outline-none focus:border-emerald-500 font-medium">
+          </div>
+          <div>
+            <label class="block text-sm font-bold text-gray-700 mb-1">Anamnesis (Historial contado por dueño)</label>
+            <textarea [(ngModel)]="nuevaConsulta.anamnesis" name="anamnesis" rows="2"
+                      class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2 outline-none focus:border-emerald-500 font-medium resize-none"></textarea>
+          </div>
+        </div>
+
+        <div class="border-t border-gray-100 pt-6">
+          <h4 class="font-extrabold text-emerald-800 mb-4 uppercase text-xs tracking-wider">Signos Vitales y Triage</h4>
+          <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+            <div>
+              <label class="block text-xs font-bold text-gray-500 mb-1">Peso (kg)</label>
+              <input type="number" step="0.1" [(ngModel)]="nuevaConsulta.peso" name="peso"
+                     class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-emerald-500 font-medium text-sm">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-gray-500 mb-1">Temp (°C)</label>
+              <input type="number" step="0.1" [(ngModel)]="nuevaConsulta.temperatura" name="temperatura"
+                     class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-emerald-500 font-medium text-sm">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-gray-500 mb-1">F. Cardíaca</label>
+              <input type="number" [(ngModel)]="nuevaConsulta.frecuenciaCardiaca" name="fc"
+                     class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-emerald-500 font-medium text-sm">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-gray-500 mb-1">F. Respiratoria</label>
+              <input type="number" [(ngModel)]="nuevaConsulta.frecuenciaRespiratoria" name="fr"
+                     class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-emerald-500 font-medium text-sm">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-gray-500 mb-1">TRC (seg)</label>
+              <input type="text" [(ngModel)]="nuevaConsulta.trc" name="trc" placeholder="ej. <2s"
+                     class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-emerald-500 font-medium text-sm">
+            </div>
+          </div>
+        </div>
+
+        <div class="border-t border-gray-100 pt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label class="block text-sm font-bold text-gray-700 mb-1">Examen Físico</label>
+            <textarea [(ngModel)]="nuevaConsulta.examenFisico" name="examenFisico" rows="4"
+                      class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-emerald-500 font-medium resize-none"></textarea>
+          </div>
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm font-bold text-emerald-700 mb-1">Diagnóstico <span class="text-red-500">*</span></label>
+              <input type="text" [(ngModel)]="nuevaConsulta.diagnostico" name="diagnostico" required
+                     class="w-full bg-emerald-50/50 border border-emerald-200 rounded-xl px-4 py-2.5 outline-none focus:border-emerald-500 font-bold text-emerald-900">
+            </div>
+            <div>
+              <label class="block text-sm font-bold text-emerald-700 mb-1">Tratamiento Sugerido</label>
+              <textarea [(ngModel)]="nuevaConsulta.tratamiento" name="tratamiento" rows="2"
+                        class="w-full bg-emerald-50/50 border border-emerald-200 rounded-xl px-4 py-2 outline-none focus:border-emerald-500 font-medium resize-none"></textarea>
+            </div>
+          </div>
+        </div>
+
+        <div class="border-t border-gray-100 pt-6">
+          <label class="block text-sm font-bold text-gray-700 mb-1">Notas Internas (Privadas)</label>
+          <input type="text" [(ngModel)]="nuevaConsulta.notas" name="notas"
+                 class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 outline-none focus:border-emerald-500 font-medium">
+        </div>
+
+        <!-- Submit Invisible para activar con el botón del footer -->
+        <button type="submit" id="submitConsulta" class="hidden"></button>
+      </form>
+    </div>
+
+    <!-- Footer Acciones -->
+    <div class="bg-gray-50 p-6 border-t border-gray-200 flex justify-end gap-4 shrink-0">
+      <button type="button" (click)="cerrarModal()" class="px-6 py-3 text-gray-600 font-bold rounded-xl hover:bg-gray-200 transition-colors">
+        Cancelar
+      </button>
+      <button type="button" onclick="document.getElementById('submitConsulta').click()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-3 rounded-xl font-extrabold shadow-lg transition-transform hover:-translate-y-0.5 active:translate-y-0">
+        Guardar Consulta
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Buscador de Medicamentos -->
+<div *ngIf="isBuscadorMedicamentosOpen" class="fixed inset-0 z-[70] flex items-center justify-center p-4">
+  <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" (click)="cerrarBuscadorMedicamento()"></div>
+  <div class="relative bg-white rounded-3xl shadow-2xl w-full max-w-lg p-6 animate-zoom-in flex flex-col max-h-[80vh]">
+    <div class="flex justify-between items-center mb-4">
+      <h3 class="text-xl font-extrabold text-gray-800 flex items-center gap-2">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" /></svg>
+        Buscar Medicamento
+      </h3>
+      <button (click)="cerrarBuscadorMedicamento()" class="text-gray-400 hover:text-gray-600 p-2 bg-gray-50 rounded-full">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+      </button>
+    </div>
+
+    <!-- Buscador -->
+    <div class="relative mb-4">
+      <input type="text" [(ngModel)]="filtroMedicamento" placeholder="Escribe para buscar (Ej. Amoxicilina)..."
+             class="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 font-medium text-gray-700">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+    </div>
+
+    <!-- Lista -->
+    <div class="overflow-y-auto custom-scrollbar flex-1 -mx-2 px-2 space-y-2">
+      <div *ngIf="medicamentosFiltrados.length === 0" class="text-center py-8 text-gray-500 font-medium text-sm">
+        No se encontraron medicamentos.
+      </div>
+      
+      <button *ngFor="let med of medicamentosFiltrados" (click)="seleccionarMedicamento(med)"
+              class="w-full text-left p-4 bg-white border border-gray-100 rounded-xl hover:border-blue-300 hover:bg-blue-50 transition-all flex justify-between items-center group">
+        <div>
+          <div class="font-extrabold text-gray-800 text-sm group-hover:text-blue-700 transition-colors">{{ med.nombreInsumo }}</div>
+          <div class="text-xs font-bold mt-0.5"
+               [ngClass]="{
+                 'text-red-500': med.cantidadActual === 0,
+                 'text-amber-500': med.cantidadActual > 0 && med.alertaStock,
+                 'text-emerald-600': !med.alertaStock
+               }">
+            Stock disponible: {{ med.cantidadActual }} {{ med.unidadMedida }}
+          </div>
+        </div>
+        <div class="bg-gray-100 text-gray-600 px-2 py-1 rounded text-xs font-black group-hover:bg-blue-600 group-hover:text-white transition-colors">
+          Seleccionar
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Recetas (Vista y Edición) -->
+<div *ngIf="isRecetaModalOpen" class="fixed inset-0 z-[60] flex items-center justify-center p-4">
+  <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" (click)="cerrarModalReceta()"></div>
+  
+  <div class="relative bg-white rounded-3xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col animate-zoom-in">
+    
+    <!-- Header Receta -->
+    <div class="bg-blue-600 p-6 text-white flex justify-between items-center shrink-0">
+      <div>
+        <h3 class="text-2xl font-extrabold flex items-center gap-2">💊 Receta Médica</h3>
+        <p class="text-blue-100 text-sm font-medium">Motivo: {{ consultaSeleccionada?.motivo }}</p>
+      </div>
+      <button (click)="cerrarModalReceta()" class="text-white/70 hover:text-white transition-colors p-2 bg-blue-700/50 rounded-full">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+      </button>
+    </div>
+
+    <!-- Body Loading -->
+    <div *ngIf="loadingReceta" class="p-12 flex justify-center items-center flex-1">
+      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+    </div>
+
+    <!-- Body VISTA (Receta ya existe) -->
+    <div *ngIf="!loadingReceta && recetaActual" class="p-8 overflow-y-auto custom-scrollbar flex-1 bg-gray-50/50">
+      <div class="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm mb-6">
+        <div class="flex justify-between items-start mb-4">
+          <div>
+            <p class="text-xs font-bold text-gray-400 uppercase">Emitida por</p>
+            <p class="font-extrabold text-gray-800 text-lg">{{ recetaActual.veterinarioNombre }}</p>
+          </div>
+          <div class="text-right">
+            <p class="text-xs font-bold text-gray-400 uppercase">Fecha</p>
+            <p class="font-bold text-gray-700">{{ recetaActual.fecha | date:'dd MMM yyyy' }}</p>
+          </div>
+        </div>
+        <div *ngIf="recetaActual.observaciones" class="bg-blue-50 p-4 rounded-xl mb-6">
+          <p class="text-xs font-bold text-blue-700 uppercase mb-1">Observaciones Generales</p>
+          <p class="text-sm text-blue-900 font-medium">{{ recetaActual.observaciones }}</p>
+        </div>
+        
+        <h4 class="font-extrabold text-gray-800 border-b border-gray-100 pb-2 mb-4">Medicamentos Recetados</h4>
+        <div class="space-y-3">
+          <div *ngFor="let det of recetaActual.detalles" class="p-4 border border-gray-100 rounded-xl bg-gray-50 flex flex-col md:flex-row gap-4 justify-between">
+            <div>
+              <p class="font-extrabold text-blue-900">{{ det.insumoNombre || 'Med. ID: ' + det.insumoId }}</p>
+              <p class="text-xs font-bold text-gray-500 uppercase mt-1">{{ det.viaAdministracion || 'Vía Oral' }}</p>
+            </div>
+            <div class="text-sm flex flex-wrap gap-4 text-gray-700 font-medium bg-white p-3 rounded-lg border border-gray-100 shadow-sm">
+              <p><span class="text-gray-400">Dosis:</span> {{ det.dosis }}</p>
+              <p><span class="text-gray-400">Frecuencia:</span> {{ det.frecuencia }}</p>
+              <p><span class="text-gray-400">Duración:</span> {{ det.duracion }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="flex justify-end">
+        <button class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-6 rounded-xl shadow-md transition-colors flex items-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5 4v3H4a2 2 0 00-2 2v3a2 2 0 002 2h1v2a2 2 0 002 2h6a2 2 0 002-2v-2h1a2 2 0 002-2V9a2 2 0 00-2-2h-1V4a2 2 0 00-2-2H7a2 2 0 00-2 2zm8 0H7v3h6V4zm0 8H7v4h6v-4z" clip-rule="evenodd" /></svg>
+          Imprimir Receta
+        </button>
+      </div>
+    </div>
+
+    <!-- Body EDICIÓN (No existe receta, crear nueva) -->
+    <div *ngIf="!loadingReceta && !recetaActual" class="p-6 overflow-y-auto custom-scrollbar flex-1">
+      <div class="bg-blue-50 border border-blue-100 text-blue-800 p-4 rounded-xl mb-6 font-medium text-sm">
+        Esta consulta no tiene una receta asignada. Agrega los medicamentos necesarios a continuación.
+      </div>
+      
+      <form (ngSubmit)="guardarReceta()" #recetaForm="ngForm">
+        
+        <div class="mb-6">
+          <label class="block text-sm font-bold text-gray-700 mb-1">Observaciones Generales (Opcional)</label>
+          <textarea [(ngModel)]="nuevaReceta.observaciones" name="observaciones" rows="2"
+                    placeholder="Ej. Mantener en reposo, dieta blanda..."
+                    class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2 outline-none focus:border-blue-500 font-medium resize-none"></textarea>
+        </div>
+
+        <div class="flex justify-between items-center mb-4 border-b border-gray-200 pb-2">
+          <h4 class="font-extrabold text-gray-800">Medicamentos</h4>
+          <button type="button" (click)="agregarMedicamento()" class="text-blue-600 hover:text-blue-800 font-bold text-sm flex items-center gap-1 bg-blue-50 px-3 py-1.5 rounded-lg transition-colors">
+            <span>+</span> Añadir otro
+          </button>
+        </div>
+
+        <div class="space-y-4 mb-6">
+          <div *ngFor="let det of nuevaReceta.detalles; let i = index" class="p-4 bg-gray-50 rounded-2xl border border-gray-200 relative group">
+            
+            <button type="button" (click)="eliminarMedicamento(i)" *ngIf="nuevaReceta.detalles.length > 1"
+                    class="absolute -top-3 -right-3 bg-red-100 text-red-600 hover:bg-red-500 hover:text-white p-1.5 rounded-full transition-colors shadow-sm z-10 hidden group-hover:block" title="Eliminar medicamento">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div>
+                <label class="block text-xs font-bold text-gray-500 mb-1">Medicamento <span class="text-red-500">*</span></label>
+                <button type="button" (click)="abrirBuscadorMedicamento(i)" 
+                        class="w-full bg-white border border-gray-200 hover:border-blue-500 rounded-lg px-3 py-2 outline-none font-bold text-sm text-left flex justify-between items-center transition-colors"
+                        [ngClass]="det.insumoId === 0 ? 'text-gray-400' : 'text-gray-700'">
+                  <span class="truncate">{{ $any(det)['_nombreSeleccionado'] || 'Buscar medicamento...' }}</span>
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                </button>
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-gray-500 mb-1">Dosis <span class="text-red-500">*</span></label>
+                <input type="text" [(ngModel)]="det.dosis" name="dosis_{{i}}" required placeholder="Ej. 1 pastilla"
+                       class="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-blue-500 font-medium text-sm">
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-gray-500 mb-1">Frecuencia <span class="text-red-500">*</span></label>
+                <input type="text" [(ngModel)]="det.frecuencia" name="frec_{{i}}" required placeholder="Ej. Cada 8 hs"
+                       class="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-blue-500 font-medium text-sm">
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-gray-500 mb-1">Duración <span class="text-red-500">*</span></label>
+                <input type="text" [(ngModel)]="det.duracion" name="dur_{{i}}" required placeholder="Ej. 5 días"
+                       class="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-blue-500 font-medium text-sm">
+              </div>
+            </div>
+            <div class="mt-3 grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-bold text-gray-500 mb-1">Vía Administración</label>
+                <input type="text" [(ngModel)]="det.viaAdministracion" name="via_{{i}}" placeholder="Ej. Oral, Intravenosa..."
+                       class="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-blue-500 font-medium text-sm">
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-gray-500 mb-1">Instrucciones extra</label>
+                <input type="text" [(ngModel)]="det.instrucciones" name="inst_{{i}}" placeholder="Ej. Después de comer"
+                       class="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-blue-500 font-medium text-sm">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <button type="submit" id="submitReceta" class="hidden"></button>
+      </form>
+    </div>
+
+    <!-- Footer Edición -->
+    <div *ngIf="!loadingReceta && !recetaActual" class="bg-gray-50 p-6 border-t border-gray-200 flex justify-end gap-4 shrink-0">
+      <button type="button" (click)="cerrarModalReceta()" class="px-6 py-2.5 text-gray-600 font-bold rounded-xl hover:bg-gray-200 transition-colors">
+        Cancelar
+      </button>
+      <button type="button" onclick="document.getElementById('submitReceta').click()" class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-2.5 rounded-xl font-extrabold shadow-md transition-colors">
+        Emitir Receta
+      </button>
+    </div>
+
+  </div>
+</div>
