@@ -14,6 +14,8 @@ export interface CitaResponse {
   clienteId?: number;
   clienteNombre?: string;
   veterinarioId: number;
+  veterinarioNombre?: string;
+  veterinarioAvatar?: string;
   tipoCita: string;
   fechaHora: string;
   duracionMinutos: number;

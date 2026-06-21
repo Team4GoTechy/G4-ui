@@ -25,4 +25,8 @@ export class MascotaService {
   obtenerPrescripciones(mascotaId: number): Observable<any[]> {
     return this.http.get<any[]>(`${this.API_URL}/${mascotaId}/prescripciones`);
   }
+
+  actualizarMascota(id: number, data: MascotaResponse): Observable<MascotaResponse> {
+    return this.http.put<MascotaResponse>(`${this.API_URL}/${id}`, data);
+  }
 }

@@ -1,5 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { NotificacionService } from '../../services/notificacion.service';
+import { NotificacionResponse } from '../../models/notificacion.model';
 
 @Component({
   selector: 'app-client-notificaciones',
@@ -7,14 +9,41 @@ import { CommonModule } from '@angular/common';
   imports: [CommonModule],
   templateUrl: './client-notificaciones.component.html'
 })
-export class ClientNotificacionesComponent {
-  notificaciones = [
-    { id: 1, tipo: 'whatsapp', titulo: 'Recordatorio de Turno', mensaje: 'Se ha enviado un mensaje a tu WhatsApp recordando tu turno mañana con el Dr. Ramiro López.', fecha: 'Hace 2 horas', leido: false },
-    { id: 2, tipo: 'email', titulo: 'Comprobante de Compra', mensaje: 'Te hemos enviado por Email el recibo de tu última compra (Alimento DogChow).', fecha: 'Ayer', leido: true },
-    { id: 3, tipo: 'sistema', titulo: '¡Bienvenido a PetHouse!', mensaje: 'Gracias por registrar a Dandi en nuestro sistema.', fecha: 'Hace 1 semana', leido: true }
-  ];
+export class ClientNotificacionesComponent implements OnInit {
+  private notificacionService = inject(NotificacionService);
 
-  marcarLeido(notif: any) {
-    notif.leido = true;
+  notificaciones: NotificacionResponse[] = [];
+  loading = false;
+
+  ngOnInit() {
+    this.cargarNotificaciones();
+  }
+
+  cargarNotificaciones() {
+    this.loading = true;
+    this.notificacionService.listar().subscribe({
+      next: (data) => {
+        this.notificaciones = data || [];
+        this.loading = false;
+      },
+      error: (err) => {
+        console.error('Error al cargar las notificaciones', err);
+        this.loading = false;
+      }
+    });
+  }
+
+  marcarLeido(notif: NotificacionResponse) {
+    if (notif.leido) return;
+
+    this.notificacionService.marcarLeido(notif.id).subscribe({
+      next: (updated) => {
+        notif.leido = true;
+        // El BehaviorSubject del servicio actualizará automáticamente el sidebar
+      },
+      error: (err) => {
+        console.error('Error al marcar notificación como leída', err);
+      }
+    });
   }
 }

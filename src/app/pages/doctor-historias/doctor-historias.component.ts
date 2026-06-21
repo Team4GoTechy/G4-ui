@@ -10,6 +10,7 @@ import { MascotaService } from '../../services/mascota.service';
 import { MascotaResponse } from '../../models/mascota.model';
 import { InsumoService } from '../../services/insumo.service';
 import { Insumo, StockInsumoResponse } from '../../models/insumo.model';
+import { CitaService } from '../../services/cita.service';
 
 @Component({
   selector: 'app-doctor-historias',
@@ -23,6 +24,7 @@ export class DoctorHistoriasComponent {
   private mascotaService = inject(MascotaService);
   private authService = inject(AuthService);
   private insumoService = inject(InsumoService);
+  private citaService = inject(CitaService);
 
   user = this.authService.getCurrentUser();
   insumosDisponibles: StockInsumoResponse[] = [];
@@ -260,6 +262,74 @@ export class DoctorHistoriasComponent {
         console.error('Error creando receta', err);
         alert('Error al guardar la receta. Asegúrate de que el ID del medicamento sea válido.');
         this.loadingReceta = false;
+      }
+    });
+  }
+
+  // --- Lógica de Asignación de Turnos de Citas de Seguimiento ---
+  isTurnoModalOpen = false;
+  submittingTurno = false;
+  nuevoTurno = {
+    tipoCita: 'CONTROL',
+    fechaHora: '',
+    duracionMinutos: 30,
+    notas: ''
+  };
+  tiposCita = ['CONSULTA', 'VACUNACION', 'CIRUGIA', 'GROOMING', 'CONTROL'];
+
+  abrirModalAsignarTurno() {
+    if (!this.mascotaActualId) return;
+    const now = new Date();
+    const tomorrow = new Date(now);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(10, 0, 0, 0);
+    tomorrow.setMinutes(tomorrow.getMinutes() - tomorrow.getTimezoneOffset());
+    
+    this.nuevoTurno = {
+      tipoCita: 'CONTROL',
+      fechaHora: tomorrow.toISOString().slice(0, 16),
+      duracionMinutos: 30,
+      notas: 'Consulta de seguimiento'
+    };
+    this.isTurnoModalOpen = true;
+  }
+
+  cerrarModalAsignarTurno() {
+    this.isTurnoModalOpen = false;
+  }
+
+  guardarTurno() {
+    if (!this.mascotaActualId || !this.user?.id || !this.nuevoTurno.fechaHora) {
+      alert("Por favor complete los campos obligatorios.");
+      return;
+    }
+
+    const fechaSeleccionada = new Date(this.nuevoTurno.fechaHora);
+    if (fechaSeleccionada < new Date()) {
+      alert("No se puede agendar una cita en el pasado.");
+      return;
+    }
+
+    this.submittingTurno = true;
+    const payload = {
+      mascotaId: this.mascotaActualId,
+      veterinarioId: this.user.id,
+      tipoCita: this.nuevoTurno.tipoCita,
+      fechaHora: this.nuevoTurno.fechaHora,
+      duracionMinutos: this.nuevoTurno.duracionMinutos,
+      notas: this.nuevoTurno.notas
+    };
+
+    this.citaService.crearCita(payload).subscribe({
+      next: (res) => {
+        this.submittingTurno = false;
+        this.cerrarModalAsignarTurno();
+        alert("¡Turno de seguimiento asignado correctamente!");
+      },
+      error: (err) => {
+        console.error('Error al asignar turno de seguimiento', err);
+        this.submittingTurno = false;
+        alert("Ocurrió un error al registrar el turno. Verifique si el veterinario ya tiene una cita en ese horario.");
       }
     });
   }

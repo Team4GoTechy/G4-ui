@@ -35,4 +35,8 @@ export class CitaService {
   actualizarEstado(id: number, estado: string): Observable<CitaResponse> {
     return this.http.patch<CitaResponse>(`${this.API_URL}/${id}/estado`, { estado });
   }
+
+  obtenerMisCitas(): Observable<CitaResponse[]> {
+    return this.http.get<CitaResponse[]>(`${this.API_URL}/mis-citas`);
+  }
 }

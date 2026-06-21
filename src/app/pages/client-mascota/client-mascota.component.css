@@ -4,7 +4,16 @@
 }
 
 @media print {
-  /* Hide everything else on the screen */
+  /* Collapse layout elements so they don't occupy space during print */
+  app-sidebar,
+  .no-print,
+  aside,
+  nav,
+  header {
+    display: none !important;
+  }
+
+  /* Fallback to hide other screen elements */
   body * {
     visibility: hidden;
   }

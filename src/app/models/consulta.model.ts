@@ -34,6 +34,7 @@ export interface ConsultaResponse {
   trc: string;
   notas?: string;
   fechaCreacion: string;
+  veterinarioAvatar?: string;
 }
 
 export interface PageResponse<T> {

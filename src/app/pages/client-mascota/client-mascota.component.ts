@@ -51,37 +51,33 @@ export class ClientMascotaComponent implements OnInit {
   notasClienteReingreso = '';
   isEnviandoReingreso = false;
 
-  // Calendario mock (últimos 120 días)
-  healthCalendar: number[] = [];
+  // Modal Edición de Mascota
+  isEditarModalOpen = false;
+  mascotaEdicion: any = {
+    nombre: '',
+    tipo: 'Perro',
+    sexo: 'Macho',
+    raza: '',
+    fechaNacimiento: '',
+    peso: null
+  };
+  isGuardandoEdicion = false;
 
   ngOnInit() {
     this.cargarMascotas();
-    this.generarCalendarioSalud();
-  }
-
-  generarCalendarioSalud() {
-    this.healthCalendar = Array.from({ length: 120 }, () => {
-      const random = Math.random();
-      if (random > 0.93) return 2; // 7% mal
-      if (random > 0.8) return 1; // 13% regular
-      return 0; // 80% excelente
-    });
-  }
-
-  getColor(status: number) {
-    switch (status) {
-      case 2: return 'bg-red-500 hover:bg-red-600';
-      case 1: return 'bg-yellow-400 hover:bg-yellow-500';
-      default: return 'bg-emerald-400 hover:bg-emerald-500';
-    }
   }
 
   cargarMascotas() {
     this.mascotaService.obtenerMisMascotas().subscribe({
       next: (res) => {
-        this.misMascotas = res || [];
+        this.misMascotas = (res || []).map(m => ({
+          ...m,
+          especie: m.especie || m.tipo
+        }));
         if (this.misMascotas.length > 0) {
-          this.seleccionarMascota(this.misMascotas[0]);
+          const currentId = this.mascotaSeleccionada?.id;
+          const found = this.misMascotas.find(m => m.id === currentId);
+          this.seleccionarMascota(found || this.misMascotas[0]);
         }
       },
       error: (err) => console.error('Error al cargar mascotas del cliente', err)
@@ -241,6 +237,82 @@ export class ClientMascotaComponent implements OnInit {
         console.error('Error solicitando reingreso', err);
         this.isEnviandoReingreso = false;
         toast.error('Ocurrió un error al enviar la solicitud.');
+      }
+    });
+  }
+
+  getPetAvatar(mascota: MascotaResponse | null): string {
+    if (!mascota) return '/assets/images/pets/3d_dog.png';
+    const tipo = (mascota.especie || mascota.tipo || '').toLowerCase();
+    if (tipo.includes('gato') || tipo.includes('cat')) {
+      return '/assets/images/pets/3d_cat.png';
+    }
+    return '/assets/images/pets/3d_dog.png';
+  }
+
+  getDoctorAvatar(avatar?: string): string {
+    if (!avatar) {
+      return '/assets/images/avatars/señor.jpg';
+    }
+    if (avatar.startsWith('http') || avatar.startsWith('/')) {
+      return avatar;
+    }
+    return `/assets/images/avatars/${avatar}`;
+  }
+
+  abrirEditarModal() {
+    if (!this.mascotaSeleccionada) return;
+    this.mascotaEdicion = {
+      nombre: this.mascotaSeleccionada.nombre || '',
+      tipo: this.mascotaSeleccionada.tipo || this.mascotaSeleccionada.especie || 'Perro',
+      sexo: this.mascotaSeleccionada.sexo || 'Macho',
+      raza: this.mascotaSeleccionada.raza || '',
+      fechaNacimiento: this.mascotaSeleccionada.fechaNacimiento || '',
+      peso: this.mascotaSeleccionada.peso || null
+    };
+    this.isEditarModalOpen = true;
+  }
+
+  cerrarEditarModal() {
+    this.isEditarModalOpen = false;
+  }
+
+  guardarEdicionMascota() {
+    if (!this.mascotaSeleccionada) return;
+    if (!this.mascotaEdicion.nombre.trim()) {
+      toast.error('El nombre de la mascota es obligatorio.');
+      return;
+    }
+    this.isGuardandoEdicion = true;
+    
+    const data: MascotaResponse = {
+      id: this.mascotaSeleccionada.id,
+      nombre: this.mascotaEdicion.nombre,
+      sexo: this.mascotaEdicion.sexo,
+      tipo: this.mascotaEdicion.tipo,
+      especie: this.mascotaEdicion.tipo,
+      raza: this.mascotaEdicion.raza,
+      fechaNacimiento: this.mascotaEdicion.fechaNacimiento,
+      peso: this.mascotaEdicion.peso
+    };
+
+    this.mascotaService.actualizarMascota(this.mascotaSeleccionada.id, data).subscribe({
+      next: (res) => {
+        this.isGuardandoEdicion = false;
+        this.isEditarModalOpen = false;
+        toast.success('Mascota actualizada correctamente.');
+        
+        if (this.mascotaSeleccionada) {
+          Object.assign(this.mascotaSeleccionada, res);
+          this.mascotaSeleccionada.especie = res.especie || res.tipo;
+        }
+        
+        this.cargarMascotas();
+      },
+      error: (err) => {
+        console.error('Error al actualizar mascota', err);
+        this.isGuardandoEdicion = false;
+        toast.error('Ocurrió un error al actualizar los datos.');
       }
     });
   }

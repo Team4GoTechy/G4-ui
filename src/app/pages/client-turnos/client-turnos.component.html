@@ -1,78 +1,215 @@
 <div class="h-full bg-slate-50 p-8 rounded-2xl border border-gray-100 flex flex-col font-nunito overflow-y-auto">
+  <!-- Header -->
   <div class="mb-8">
-    <h1 class="text-3xl font-extrabold text-gray-800">Reserva de Turnos</h1>
-    <p class="text-gray-500">Elige a un especialista y selecciona un día disponible.</p>
+    <h1 class="text-3xl font-extrabold text-slate-800">Mis Turnos y Citas</h1>
+    <p class="text-slate-500 font-bold text-sm">Gestiona y reserva las consultas médicas de tus mascotas desde un solo lugar.</p>
   </div>
 
-  <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-    
-    <!-- Paso 1: Seleccionar Doctor -->
-    <div class="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
-      <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-        <span class="bg-sky-100 text-sky-500 w-8 h-8 rounded-full flex items-center justify-center text-sm">1</span>
-        Seleccionar Profesional
-      </h3>
-      
-      <div class="space-y-3">
-        <div *ngFor="let doc of doctores" 
-             (click)="seleccionarDoctor(doc.id)"
-             class="p-4 rounded-2xl border-2 cursor-pointer transition-all flex items-center gap-4"
-             [ngClass]="doctorSeleccionado === doc.id ? 'border-sky-400 bg-sky-50' : 'border-gray-100 hover:border-sky-200'">
-          <div class="w-12 h-12 bg-sky-100 text-sky-500 rounded-full flex items-center justify-center font-bold">
-            {{ doc.nombre.charAt(0) }}{{ doc.nombre.split(' ')[1].charAt(0) }}
-          </div>
-          <div>
-            <p class="font-bold text-gray-800">{{ doc.nombre }}</p>
-            <p class="text-sm text-gray-500">{{ doc.especialidad }}</p>
-          </div>
-        </div>
-      </div>
+  <!-- Fila Superior: Panel de Reserva Horizontal -->
+  <div class="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 mb-8">
+    <h2 class="text-xl font-extrabold text-slate-800 mb-6 flex items-center gap-2">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+      Nueva Reserva de Turno
+    </h2>
+
+    <!-- Alert de Éxito -->
+    <div *ngIf="mensajeExito" class="mb-6 p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-2xl flex items-start gap-3">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-emerald-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+      <div class="text-sm font-semibold">{{ mensajeExito }}</div>
     </div>
 
-    <!-- Paso 2: Seleccionar Fecha -->
-    <div class="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 opacity-50 transition-opacity"
-         [ngClass]="{'opacity-100': doctorSeleccionado !== null}">
-      <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-        <span class="bg-orange-100 text-orange-500 w-8 h-8 rounded-full flex items-center justify-center text-sm">2</span>
-        Disponibilidad Semanal
-      </h3>
+    <!-- Alert de Error -->
+    <div *ngIf="mensajeError" class="mb-6 p-4 bg-rose-50 border border-rose-200 text-rose-800 rounded-2xl flex items-start gap-3">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-rose-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+      </svg>
+      <div class="text-sm font-semibold">{{ mensajeError }}</div>
+    </div>
 
-      <div *ngIf="doctorSeleccionado === null" class="text-center text-gray-400 py-10 font-bold">
-        Selecciona un doctor primero
-      </div>
+    <form (ngSubmit)="reservarTurno()" #turnoForm="ngForm">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+        
+        <!-- Columna 1: Mascota, Motivo y Profesional -->
+        <div class="space-y-5">
+          <div>
+            <label class="block text-xs font-extrabold text-slate-500 uppercase tracking-wider mb-2">1. Selecciona la Mascota</label>
+            <select [(ngModel)]="mascotaSeleccionadaId" name="mascotaId" required
+                    class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-sky-400 font-bold text-slate-800 text-sm">
+              <option [ngValue]="null" disabled selected>Elige a quién atender...</option>
+              <option *ngFor="let pet of mascotas" [ngValue]="pet.id">
+                {{ pet.nombre }} ({{ pet.tipo }})
+              </option>
+            </select>
+          </div>
 
-      <div *ngIf="doctorSeleccionado !== null">
-        <div class="flex gap-2 justify-center mb-6">
-          <button *ngFor="let dia of dias" 
-                  [disabled]="!dia.disponible"
-                  (click)="seleccionarDia(dia.num)"
-                  class="w-16 h-20 rounded-2xl flex flex-col items-center justify-center border-2 transition-all"
-                  [ngClass]="{
-                    'border-gray-100 bg-gray-50 text-gray-300 cursor-not-allowed': !dia.disponible,
-                    'border-orange-400 bg-orange-50 text-orange-600 shadow-md': diaSeleccionado === dia.num,
-                    'border-gray-200 hover:border-orange-200 hover:bg-orange-50 cursor-pointer': dia.disponible && diaSeleccionado !== dia.num
-                  }">
-            <span class="text-sm font-bold uppercase">{{ dia.nombre }}</span>
-            <span class="text-2xl font-extrabold">{{ dia.num }}</span>
+          <div>
+            <label class="block text-xs font-extrabold text-slate-500 uppercase tracking-wider mb-2">2. Motivo o Tipo de Cita</label>
+            <select [(ngModel)]="tipoCitaSeleccionado" name="tipoCita" required
+                    class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-sky-400 font-bold text-slate-800 text-sm">
+              <option *ngFor="let t of tiposCita" [value]="t">{{ t }}</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-extrabold text-slate-500 uppercase tracking-wider mb-2">3. Selecciona al Veterinario</label>
+            <div *ngIf="loadingVets" class="flex justify-center items-center py-6">
+              <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-sky-500"></div>
+            </div>
+            
+            <div *ngIf="!loadingVets && veterinarios.length === 0" class="text-xs text-slate-400 italic">
+              No hay veterinarios activos disponibles.
+            </div>
+
+            <div *ngIf="!loadingVets && veterinarios.length > 0" class="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-40 overflow-y-auto pr-1 custom-scrollbar">
+              <div *ngFor="let vet of veterinarios" 
+                   (click)="seleccionarDoctor(vet)"
+                   class="p-2.5 rounded-xl border-2 cursor-pointer transition-all flex items-center gap-3 bg-slate-50/50"
+                   [ngClass]="doctorSeleccionado?.id === vet.id ? 'border-sky-400 bg-sky-50/20' : 'border-slate-100 hover:border-sky-200'">
+                <img [src]="getDoctorAvatar(vet.avatar)" class="w-10 h-10 rounded-full border border-gray-200 object-cover shadow-sm shrink-0">
+                <div class="min-w-0">
+                  <p class="font-extrabold text-slate-800 text-xs truncate">{{ vet.nombreUsuario }}</p>
+                  <p class="text-[10px] text-slate-500 font-semibold truncate">{{ vet.especialidad || 'Veterinario' }}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Columna 2: Fecha y Horarios Disponibles -->
+        <div class="space-y-5">
+          <div>
+            <label class="block text-xs font-extrabold text-slate-500 uppercase tracking-wider mb-2">4. Selecciona la Fecha</label>
+            <input type="date" [(ngModel)]="fechaSeleccionada" name="fecha" required
+                   [min]="fechaMinima" (change)="onFechaChange()"
+                   class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-sky-400 font-bold text-slate-800 text-sm">
+          </div>
+
+          <div *ngIf="doctorSeleccionado && fechaSeleccionada">
+            <label class="block text-xs font-extrabold text-slate-500 uppercase tracking-wider mb-2">5. Selecciona el Horario</label>
+            
+            <div *ngIf="loadingSlots" class="flex justify-center items-center py-6">
+              <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
+            </div>
+
+            <div *ngIf="!loadingSlots" class="grid grid-cols-4 gap-1.5 max-h-48 overflow-y-auto pr-1 custom-scrollbar">
+              <button type="button" *ngFor="let h of horasDisponibles"
+                      [disabled]="!h.disponible"
+                      (click)="seleccionarSlot(h.hora)"
+                      class="py-2 rounded-lg border text-[11px] font-extrabold transition-all"
+                      [ngClass]="{
+                        'border-slate-100 bg-slate-50 text-slate-300 cursor-not-allowed': !h.disponible,
+                        'border-orange-400 bg-orange-50/70 text-orange-600 font-black shadow-sm': slotSeleccionado === h.hora,
+                        'border-slate-200 text-slate-700 hover:border-orange-200 hover:bg-orange-50/20 bg-white': h.disponible && slotSeleccionado !== h.hora
+                      }">
+                {{ h.hora }}
+              </button>
+            </div>
+          </div>
+
+          <div *ngIf="!doctorSeleccionado || !fechaSeleccionada" class="flex flex-col items-center justify-center py-10 bg-slate-50/50 rounded-2xl border border-slate-100 text-center text-slate-400">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-slate-300 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            <p class="text-xs font-bold">Selecciona especialista y fecha para ver horarios</p>
+          </div>
+        </div>
+
+        <!-- Columna 3: Detalles y Confirmación -->
+        <div class="space-y-5">
+          <div>
+            <label class="block text-xs font-extrabold text-slate-500 uppercase tracking-wider mb-2">Notas o Síntomas</label>
+            <textarea [(ngModel)]="notas" name="notas" rows="4" placeholder="Describe brevemente el síntoma o motivo del turno..."
+                      class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-sky-400 font-medium text-slate-700 text-sm resize-none"></textarea>
+          </div>
+
+          <button type="submit" [disabled]="submitting || !mascotaSeleccionadaId || !doctorSeleccionado || !fechaSeleccionada || !slotSeleccionado"
+                  class="w-full bg-orange-400 hover:bg-orange-500 disabled:opacity-50 text-white font-extrabold py-3.5 rounded-2xl shadow-lg hover:shadow-xl transition-all text-base flex justify-center items-center gap-2">
+            <span *ngIf="submitting" class="animate-spin rounded-full h-5 w-5 border-b-2 border-white shrink-0"></span>
+            Solicitar Reserva de Turno
           </button>
         </div>
 
-        <button (click)="confirmarTurno()" [disabled]="!diaSeleccionado" 
-                class="w-full bg-orange-400 hover:bg-orange-500 disabled:opacity-50 text-white font-extrabold py-3.5 rounded-2xl shadow-lg transition-all text-lg">
-          Confirmar Turno
-        </button>
       </div>
+    </form>
+  </div>
 
-      <!-- Alerta Confirmación -->
-      <div *ngIf="turnoConfirmado" class="mt-6 p-4 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-2xl flex items-center gap-3">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-        <div>
-          <p class="font-bold">¡Turno Confirmado!</p>
-          <p class="text-sm">Te hemos enviado un correo con los detalles.</p>
-        </div>
-      </div>
+  <!-- Fila Inferior: Historial de Citas (Formato Horizontal Grid) -->
+  <div class="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex-1 flex flex-col">
+    <h2 class="text-xl font-extrabold text-slate-800 mb-6 flex items-center gap-2">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-sky-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+      </svg>
+      Mis Turnos Programados
+    </h2>
 
+    <!-- Spinner de Carga -->
+    <div *ngIf="loadingCitas" class="flex justify-center items-center py-12 flex-1">
+      <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-sky-500"></div>
     </div>
 
+    <!-- Sin Citas -->
+    <div *ngIf="!loadingCitas && citas.length === 0" class="text-center py-12 bg-slate-50/50 rounded-2xl border border-dashed border-gray-200 flex-1 flex flex-col justify-center items-center">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-slate-300 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+      </svg>
+      <p class="text-slate-500 font-extrabold">Historial vacío</p>
+      <p class="text-slate-400 text-sm mt-1">Aquí aparecerán tus turnos agendados y su estado de confirmación.</p>
+    </div>
+
+    <!-- Grid de Tarjetas de Citas -->
+    <div *ngIf="!loadingCitas && citas.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 overflow-y-auto pr-1 custom-scrollbar">
+      <div *ngFor="let cita of citas" class="bg-slate-50/40 p-5 rounded-2xl border border-slate-100 hover:border-sky-100 transition-all flex flex-col justify-between gap-4">
+        
+        <!-- Cabecera de la Cita: Mascota y Estado -->
+        <div class="flex justify-between items-start gap-2">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-sky-50 rounded-full flex items-center justify-center border border-sky-100 shrink-0">
+              <svg *ngIf="cita.mascotaNombre?.toLowerCase() === 'nube'" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-sky-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              <svg *ngIf="cita.mascotaNombre?.toLowerCase() !== 'nube'" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-sky-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+              </svg>
+            </div>
+            <div>
+              <h3 class="font-extrabold text-slate-850 text-base leading-tight">{{ cita.mascotaNombre }}</h3>
+              <span class="text-[9px] font-black px-1.5 py-0.5 rounded bg-sky-100 text-sky-700 uppercase tracking-wider">{{ cita.tipoCita }}</span>
+            </div>
+          </div>
+          <span class="px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase border shrink-0" [ngClass]="getEstadoClase(cita.estado)">
+            {{ getEstadoTexto(cita.estado) }}
+          </span>
+        </div>
+
+        <!-- Detalles del Veterinario y Horario -->
+        <div class="space-y-2 border-t border-slate-100/80 pt-3">
+          <div class="flex items-center gap-2.5">
+            <img [src]="getDoctorAvatar(cita.veterinarioAvatar)" class="w-8 h-8 rounded-full border border-slate-200 object-cover shadow-sm shrink-0">
+            <div class="min-w-0">
+              <p class="text-xs text-slate-500 font-bold leading-none">Veterinario</p>
+              <p class="text-xs text-slate-800 font-extrabold truncate mt-0.5">{{ cita.veterinarioNombre }}</p>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-1.5 text-xs text-slate-600 font-bold bg-white p-2 rounded-xl border border-slate-100">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span>{{ cita.fechaHora | date:'EEEE d \'de\' MMMM, HH:mm\'hs\'' }}</span>
+          </div>
+        </div>
+
+        <!-- Comentarios de la Cita (si existen) -->
+        <div *ngIf="cita.notas" class="bg-white p-2.5 rounded-xl border border-slate-100 text-[11px] text-slate-500 italic font-medium leading-relaxed">
+          "{{ cita.notas }}"
+        </div>
+
+      </div>
+    </div>
   </div>
+
 </div>
