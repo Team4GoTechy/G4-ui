@@ -9,6 +9,7 @@ import { ClientMascotaComponent } from './pages/client-mascota/client-mascota.co
 import { ClientTurnosComponent } from './pages/client-turnos/client-turnos.component';
 import { ClientHistorialComponent } from './pages/client-historial/client-historial.component';
 import { ClientNotificacionesComponent } from './pages/client-notificaciones/client-notificaciones.component';
+import { ClientPagosComponent } from './pages/client-pagos/client-pagos.component';
 import { AdminLayoutComponent } from './components/layouts/admin-layout/admin-layout.component';
 import { AdminHomeComponent } from './pages/admin-home/admin-home.component';
 import { DoctorLayoutComponent } from './components/layouts/doctor-layout/doctor-layout.component';
@@ -47,7 +48,8 @@ export const routes: Routes = [
       { path: 'mascota', component: ClientMascotaComponent },
       { path: 'turnos', component: ClientTurnosComponent },
       { path: 'historial', component: ClientHistorialComponent },
-      { path: 'notificaciones', component: ClientNotificacionesComponent }
+      { path: 'notificaciones', component: ClientNotificacionesComponent },
+      { path: 'pagos', component: ClientPagosComponent }
     ]
   },
   {

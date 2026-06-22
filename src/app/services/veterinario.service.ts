@@ -13,4 +13,16 @@ export class VeterinarioService {
   listarTodos(): Observable<VeterinarioResponse[]> {
     return this.http.get<VeterinarioResponse[]>(this.API_URL);
   }
+
+  crear(dto: any): Observable<VeterinarioResponse> {
+    return this.http.post<VeterinarioResponse>(this.API_URL, dto);
+  }
+
+  actualizar(id: number, dto: any): Observable<VeterinarioResponse> {
+    return this.http.put<VeterinarioResponse>(`${this.API_URL}/${id}`, dto);
+  }
+
+  eliminar(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.API_URL}/${id}`);
+  }
 }

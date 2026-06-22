@@ -47,25 +47,28 @@
           </div>
 
           <div>
-            <label class="block text-xs font-extrabold text-slate-500 uppercase tracking-wider mb-2">2. Motivo o Tipo de Cita</label>
-            <select [(ngModel)]="tipoCitaSeleccionado" name="tipoCita" required
+            <label class="block text-xs font-extrabold text-slate-500 uppercase tracking-wider mb-2">2. Selecciona el Servicio</label>
+            <select [(ngModel)]="servicioSeleccionado" (change)="onServicioChange()" name="servicio" required
                     class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-sky-400 font-bold text-slate-800 text-sm">
-              <option *ngFor="let t of tiposCita" [value]="t">{{ t }}</option>
+              <option [ngValue]="null" disabled selected>Elige un servicio...</option>
+              <option *ngFor="let s of servicios" [ngValue]="s">
+                {{ s.nombre }} ($ {{ s.precio | number:'1.0-0' }})
+              </option>
             </select>
           </div>
 
           <div>
             <label class="block text-xs font-extrabold text-slate-500 uppercase tracking-wider mb-2">3. Selecciona al Veterinario</label>
-            <div *ngIf="loadingVets" class="flex justify-center items-center py-6">
-              <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-sky-500"></div>
-            </div>
-            
-            <div *ngIf="!loadingVets && veterinarios.length === 0" class="text-xs text-slate-400 italic">
-              No hay veterinarios activos disponibles.
+            <div *ngIf="!servicioSeleccionado" class="text-xs text-amber-600 bg-amber-50 p-3 rounded-xl border border-amber-100 font-bold">
+              Selecciona un servicio primero para ver profesionales disponibles.
             </div>
 
-            <div *ngIf="!loadingVets && veterinarios.length > 0" class="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-40 overflow-y-auto pr-1 custom-scrollbar">
-              <div *ngFor="let vet of veterinarios" 
+            <div *ngIf="servicioSeleccionado && veterinariosFiltrados.length === 0" class="text-xs text-slate-400 italic bg-slate-50 p-3 rounded-xl border border-slate-150">
+              No hay veterinarios asignados a este servicio actualmente.
+            </div>
+
+            <div *ngIf="servicioSeleccionado && veterinariosFiltrados.length > 0" class="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-40 overflow-y-auto pr-1 custom-scrollbar">
+              <div *ngFor="let vet of veterinariosFiltrados" 
                    (click)="seleccionarDoctor(vet)"
                    class="p-2.5 rounded-xl border-2 cursor-pointer transition-all flex items-center gap-3 bg-slate-50/50"
                    [ngClass]="doctorSeleccionado?.id === vet.id ? 'border-sky-400 bg-sky-50/20' : 'border-slate-100 hover:border-sky-200'">
@@ -126,7 +129,7 @@
                       class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-sky-400 font-medium text-slate-700 text-sm resize-none"></textarea>
           </div>
 
-          <button type="submit" [disabled]="submitting || !mascotaSeleccionadaId || !doctorSeleccionado || !fechaSeleccionada || !slotSeleccionado"
+          <button type="submit" [disabled]="submitting || !mascotaSeleccionadaId || !servicioSeleccionado || !doctorSeleccionado || !fechaSeleccionada || !slotSeleccionado"
                   class="w-full bg-orange-400 hover:bg-orange-500 disabled:opacity-50 text-white font-extrabold py-3.5 rounded-2xl shadow-lg hover:shadow-xl transition-all text-base flex justify-center items-center gap-2">
             <span *ngIf="submitting" class="animate-spin rounded-full h-5 w-5 border-b-2 border-white shrink-0"></span>
             Solicitar Reserva de Turno

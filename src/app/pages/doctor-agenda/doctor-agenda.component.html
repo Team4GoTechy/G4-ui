@@ -113,7 +113,12 @@
           <div class="bg-gray-50/50 border-x border-b border-gray-200 rounded-b-xl p-2 flex-1 min-h-[300px] flex flex-col gap-2 transition-colors hover:bg-emerald-50/30">
             <div *ngFor="let cita of getCitasPorEstado('COMPLETADA')" 
                  draggable="true" (dragstart)="drag($event, cita)" (click)="abrirDetalleCita(cita)"
-                 class="bg-white p-3 rounded-xl shadow-sm border border-emerald-200 cursor-pointer hover:shadow-md transition-all group hover:-translate-y-0.5 opacity-80">
+                 class="bg-white p-3 rounded-xl shadow-sm border border-emerald-200 cursor-pointer hover:shadow-md transition-all group hover:-translate-y-0.5 opacity-80 relative">
+              
+              <!-- Badge de Pagado -->
+              <div *ngIf="cita.pagado" class="absolute -top-2 -right-2 bg-emerald-500 text-white rounded-full p-1 shadow-sm" title="Pagado">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>
+              </div>
               <div class="flex justify-between items-center mb-1">
                 <span class="text-[10px] font-extrabold px-1.5 py-0.5 rounded tracking-wider bg-emerald-50 text-emerald-600 border border-emerald-200">{{ cita.tipoCita }}</span>
                 <p class="text-sm font-black text-gray-800">{{ formatHora(cita.fechaHora) }}</p>
@@ -284,6 +289,19 @@
         <div class="text-sm font-black text-gray-800">{{ citaSeleccionada.duracionMinutos }} min</div>
       </div>
 
+      <div class="bg-gray-50 p-4 rounded-2xl flex justify-between items-center border border-gray-100">
+        <div class="text-sm font-bold text-gray-500">Estado de Pago</div>
+        <div *ngIf="citaSeleccionada.pagado" class="text-sm font-black px-3 py-1 rounded-lg border tracking-wider bg-emerald-50 text-emerald-600 border-emerald-200 shadow-sm flex items-center gap-1">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" /></svg> Pagado
+        </div>
+        <div *ngIf="!citaSeleccionada.pagado && citaSeleccionada.estado === 'COMPLETADA'" class="text-sm font-black px-3 py-1 rounded-lg border tracking-wider bg-orange-50 text-orange-600 border-orange-200 shadow-sm flex items-center gap-1">
+          Pendiente
+        </div>
+        <div *ngIf="!citaSeleccionada.pagado && citaSeleccionada.estado !== 'COMPLETADA'" class="text-sm font-black text-gray-400">
+          -
+        </div>
+      </div>
+
       <div class="bg-gray-50 p-4 rounded-2xl flex items-center gap-3 border border-gray-100">
         <div class="bg-white p-2 rounded-xl shadow-sm text-emerald-500">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
@@ -298,6 +316,112 @@
         <div class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Notas / Motivo</div>
         <p class="text-sm font-medium text-gray-600">"{{ citaSeleccionada.notas }}"</p>
       </div>
+
+      <div *ngIf="citaSeleccionada.estado !== 'COMPLETADA' && citaSeleccionada.estado !== 'CANCELADA'" class="pt-4 border-t border-gray-100 flex justify-end">
+        <button (click)="abrirAtenderCita(citaSeleccionada)" 
+                class="w-full bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-extrabold py-3.5 rounded-xl shadow-md transition-all flex items-center justify-center gap-2 text-sm cursor-pointer">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+          </svg>
+          Atender Paciente (Historia Clínica)
+        </button>
+      </div>
     </div>
+  </div>
+</div>
+
+<!-- Modal: Registrar Consulta Médica (Atender Paciente) -->
+<div *ngIf="isAtenderModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+  <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" (click)="isAtenderModalOpen = false"></div>
+  <div class="relative bg-white rounded-3xl shadow-2xl w-full max-w-2xl p-8 animate-zoom-in max-h-[90vh] overflow-y-auto font-nunito border border-gray-100">
+    <div class="flex justify-between items-start mb-6 border-b border-gray-100 pb-4">
+      <div>
+        <h3 class="text-2xl font-black text-slate-800">Atender Paciente</h3>
+        <p class="text-slate-400 text-sm font-bold mt-1">Registra la consulta médica y actualiza el historial clínico</p>
+      </div>
+      <button (click)="isAtenderModalOpen = false" class="text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100 p-2 rounded-full transition-colors">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+      </button>
+    </div>
+
+    <form (ngSubmit)="guardarConsultaAtender()" class="space-y-5">
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-bold text-gray-500 mb-1.5 uppercase">Paciente (Mascota)</label>
+          <div class="bg-gray-50 border border-gray-100 px-4 py-2.5 rounded-xl font-extrabold text-slate-800 text-sm">{{ nuevaConsulta.mascotaNombre }}</div>
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-gray-500 mb-1.5 uppercase">Motivo de Consulta *</label>
+          <input type="text" [(ngModel)]="nuevaConsulta.motivo" name="motivo" required class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 outline-none focus:border-emerald-500 font-bold text-sm text-gray-800">
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-bold text-gray-500 mb-1.5 uppercase">Diagnóstico *</label>
+          <input type="text" [(ngModel)]="nuevaConsulta.diagnostico" name="diagnostico" required class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 outline-none focus:border-emerald-500 font-bold text-sm text-gray-800" placeholder="Ej. Gastroenteritis aguda">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-gray-500 mb-1.5 uppercase">Tratamiento</label>
+          <input type="text" [(ngModel)]="nuevaConsulta.tratamiento" name="tratamiento" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 outline-none focus:border-emerald-500 font-bold text-sm text-gray-800" placeholder="Ej. Dieta líquida por 24 horas y antibiótico">
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-xs font-bold text-gray-500 mb-1.5 uppercase">Anamnesis (Historial Clínico) *</label>
+        <textarea [(ngModel)]="nuevaConsulta.anamnesis" name="anamnesis" rows="3" required class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-emerald-500 font-medium text-sm resize-none" placeholder="Ingresa los antecedentes e historial detallado..."></textarea>
+      </div>
+
+      <div>
+        <label class="block text-xs font-bold text-gray-500 mb-1.5 uppercase">Examen Físico</label>
+        <textarea [(ngModel)]="nuevaConsulta.examenFisico" name="examenFisico" rows="2" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-emerald-500 font-medium text-sm resize-none" placeholder="Ingresa detalles del examen físico..."></textarea>
+      </div>
+
+      <!-- Signos Vitales -->
+      <div class="bg-gray-50 p-5 rounded-2xl border border-gray-100 space-y-4">
+        <h4 class="text-xs font-black uppercase text-gray-400 tracking-wider">Signos Vitales y Parámetros</h4>
+        
+        <div class="grid grid-cols-3 gap-4">
+          <div>
+            <label class="block text-[10px] font-bold text-gray-500 mb-1">Peso (kg)</label>
+            <input type="number" [(ngModel)]="nuevaConsulta.peso" name="peso" step="0.1" min="0" class="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-emerald-500 font-bold text-xs">
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold text-gray-500 mb-1">Temp (°C)</label>
+            <input type="number" [(ngModel)]="nuevaConsulta.temperatura" name="temperatura" step="0.1" class="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-emerald-500 font-bold text-xs">
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold text-gray-500 mb-1">Frec. Cardiaca (lpm)</label>
+            <input type="number" [(ngModel)]="nuevaConsulta.frecuenciaCardiaca" name="frecuenciaCardiaca" class="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-emerald-500 font-bold text-xs">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-[10px] font-bold text-gray-500 mb-1">Frec. Respiratoria (rpm)</label>
+            <input type="number" [(ngModel)]="nuevaConsulta.frecuenciaRespiratoria" name="frecuenciaRespiratoria" class="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-emerald-500 font-bold text-xs">
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold text-gray-500 mb-1">TRC (segundos o Normal)</label>
+            <input type="text" [(ngModel)]="nuevaConsulta.trc" name="trc" class="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-emerald-500 font-bold text-xs">
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-xs font-bold text-gray-500 mb-1.5 uppercase">Notas Adicionales (Opcional)</label>
+        <textarea [(ngModel)]="nuevaConsulta.notas" name="notas" rows="2" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-emerald-500 font-medium text-sm resize-none" placeholder="Cuidados, dieta, etc..."></textarea>
+      </div>
+
+      <div class="pt-4 border-t border-gray-100 flex justify-end gap-3">
+        <button type="button" (click)="isAtenderModalOpen = false" class="bg-gray-100 hover:bg-gray-200 active:scale-95 text-gray-600 font-extrabold py-2.5 px-6 rounded-xl transition-all duration-200 text-sm cursor-pointer">
+          Cancelar
+        </button>
+        <button type="submit" [disabled]="guardandoConsulta" class="bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-extrabold py-2.5 px-6 rounded-xl transition-all duration-200 text-sm shadow-md hover:shadow-emerald-600/30 flex items-center gap-2 cursor-pointer">
+          <span *ngIf="guardandoConsulta" class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></span>
+          Guardar Consulta y Finalizar Turno
+        </button>
+      </div>
+    </form>
   </div>
 </div>

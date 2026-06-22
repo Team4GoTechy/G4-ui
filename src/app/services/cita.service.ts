@@ -39,4 +39,8 @@ export class CitaService {
   obtenerMisCitas(): Observable<CitaResponse[]> {
     return this.http.get<CitaResponse[]>(`${this.API_URL}/mis-citas`);
   }
+
+  pagarCita(id: number): Observable<CitaResponse> {
+    return this.http.patch<CitaResponse>(`${this.API_URL}/${id}/pagar`, {});
+  }
 }

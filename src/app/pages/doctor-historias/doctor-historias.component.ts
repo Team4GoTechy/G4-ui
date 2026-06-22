@@ -11,6 +11,7 @@ import { MascotaResponse } from '../../models/mascota.model';
 import { InsumoService } from '../../services/insumo.service';
 import { Insumo, StockInsumoResponse } from '../../models/insumo.model';
 import { CitaService } from '../../services/cita.service';
+import { toast } from 'ngx-sonner';
 
 @Component({
   selector: 'app-doctor-historias',
@@ -115,7 +116,7 @@ export class DoctorHistoriasComponent {
 
   buscarHistorial() {
     if (!this.busquedaId || this.busquedaId <= 0) {
-      alert('Por favor seleccione una mascota válida.');
+      toast.warning('Por favor seleccione una mascota válida.');
       return;
     }
 
@@ -133,7 +134,7 @@ export class DoctorHistoriasComponent {
         console.error('Error buscando historial', err);
         this.consultas = [];
         this.loading = false;
-        alert('Ocurrió un error o la mascota no existe.');
+        toast.error('Ocurrió un error o la mascota no existe.');
       }
     });
   }
@@ -166,18 +167,19 @@ export class DoctorHistoriasComponent {
 
   guardarConsulta() {
     if (!this.nuevaConsulta.motivo || !this.nuevaConsulta.diagnostico) {
-      alert("Motivo y Diagnóstico son obligatorios.");
+      toast.warning("Motivo y Diagnóstico son obligatorios.");
       return;
     }
 
     this.consultaService.registrarConsulta(this.nuevaConsulta).subscribe({
       next: (res) => {
+        toast.success("Consulta registrada exitosamente.");
         this.cerrarModal();
         this.buscarHistorial(); // Refrescar historial
       },
       error: (err) => {
         console.error('Error guardando consulta', err);
-        alert('Ocurrió un error al registrar la consulta.');
+        toast.error('Ocurrió un error al registrar la consulta.');
       }
     });
   }
@@ -242,7 +244,7 @@ export class DoctorHistoriasComponent {
     );
 
     if (detallesValidos.length === 0) {
-      alert('Debe completar al menos un medicamento con ID, Dosis, Frecuencia y Duración.');
+      toast.warning('Debe completar al menos un medicamento con ID, Dosis, Frecuencia y Duración.');
       return;
     }
 
@@ -255,12 +257,13 @@ export class DoctorHistoriasComponent {
     this.loadingReceta = true;
     this.prescripcionService.crearPrescripcion(this.consultaSeleccionada.id, payload).subscribe({
       next: (res) => {
+        toast.success("Receta guardada exitosamente.");
         this.recetaActual = res; // Cambia a modo vista
         this.loadingReceta = false;
       },
       error: (err) => {
         console.error('Error creando receta', err);
-        alert('Error al guardar la receta. Asegúrate de que el ID del medicamento sea válido.');
+        toast.error('Error al guardar la receta. Asegúrate de que el ID del medicamento sea válido.');
         this.loadingReceta = false;
       }
     });
@@ -300,13 +303,13 @@ export class DoctorHistoriasComponent {
 
   guardarTurno() {
     if (!this.mascotaActualId || !this.user?.id || !this.nuevoTurno.fechaHora) {
-      alert("Por favor complete los campos obligatorios.");
+      toast.warning("Por favor complete los campos obligatorios.");
       return;
     }
 
     const fechaSeleccionada = new Date(this.nuevoTurno.fechaHora);
     if (fechaSeleccionada < new Date()) {
-      alert("No se puede agendar una cita en el pasado.");
+      toast.warning("No se puede agendar una cita en el pasado.");
       return;
     }
 
@@ -324,12 +327,12 @@ export class DoctorHistoriasComponent {
       next: (res) => {
         this.submittingTurno = false;
         this.cerrarModalAsignarTurno();
-        alert("¡Turno de seguimiento asignado correctamente!");
+        toast.success("¡Turno de seguimiento asignado correctamente!");
       },
       error: (err) => {
         console.error('Error al asignar turno de seguimiento', err);
         this.submittingTurno = false;
-        alert("Ocurrió un error al registrar el turno. Verifique si el veterinario ya tiene una cita en ese horario.");
+        toast.error("Ocurrió un error al registrar el turno. Verifique si el horario está disponible.");
       }
     });
   }

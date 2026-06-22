@@ -4,8 +4,10 @@ import { FormsModule } from '@angular/forms';
 import { CitaService } from '../../services/cita.service';
 import { MascotaService } from '../../services/mascota.service';
 import { AuthService } from '../../services/auth.service';
+import { ConsultaService } from '../../services/consulta.service';
 import { CitaResponse } from '../../models/cita.model';
 import { MascotaResponse } from '../../models/mascota.model';
+import { toast } from 'ngx-sonner';
 
 @Component({
   selector: 'app-doctor-agenda',
@@ -17,9 +19,31 @@ export class DoctorAgendaComponent implements OnInit {
   private citaService = inject(CitaService);
   private mascotaService = inject(MascotaService);
   private authService = inject(AuthService);
+  private consultaService = inject(ConsultaService);
 
   user = this.authService.getCurrentUser();
   loading = false;
+
+  // Atender Turno / Consulta
+  isAtenderModalOpen = false;
+  guardandoConsulta = false;
+  nuevaConsulta: any = {
+    citaId: 0,
+    mascotaId: 0,
+    mascotaNombre: '',
+    veterinarioId: 0,
+    motivo: '',
+    anamnesis: '',
+    examenFisico: '',
+    diagnostico: '',
+    tratamiento: '',
+    peso: 0,
+    temperatura: 38.5,
+    frecuenciaCardiaca: 100,
+    frecuenciaRespiratoria: 24,
+    trc: 'Normal',
+    notes: ''
+  };
 
   // View Mode
   vistaModo: 'dia' | 'mes' = 'dia';
@@ -209,13 +233,13 @@ export class DoctorAgendaComponent implements OnInit {
 
   guardarCita() {
     if (!this.user?.id || !this.nuevaCita.mascotaId || !this.nuevaCita.fechaHora) {
-      alert("Por favor complete los campos obligatorios.");
+      toast.warning("Por favor complete los campos obligatorios.");
       return;
     }
 
     const fechaSeleccionada = new Date(this.nuevaCita.fechaHora);
     if (fechaSeleccionada < new Date()) {
-      alert("No se puede agendar una cita en el pasado.");
+      toast.warning("No se puede agendar una cita en el pasado.");
       return;
     }
     
@@ -227,12 +251,13 @@ export class DoctorAgendaComponent implements OnInit {
 
     this.citaService.crearCita(payload).subscribe({
       next: (res) => {
+        toast.success("Turno agendado correctamente.");
         this.cerrarModal();
         this.cargarAgenda();
       },
       error: (err) => {
         console.error('Error creando cita', err);
-        alert("Ocurrió un error al crear la cita. Verifique si el horario está disponible.");
+        toast.error("Ocurrió un error al crear la cita. Verifique si el horario está disponible.");
       }
     });
   }
@@ -247,8 +272,51 @@ export class DoctorAgendaComponent implements OnInit {
       },
       error: (err) => {
         console.error('Error actualizando estado', err);
-        alert("No se pudo actualizar el estado de la cita.");
+        toast.error("No se pudo actualizar el estado de la cita.");
         event.target.value = cita.estado;
+      }
+    });
+  }
+
+  abrirAtenderCita(cita: CitaResponse) {
+    this.isDetalleModalOpen = false;
+    this.nuevaConsulta = {
+      citaId: cita.id,
+      mascotaId: cita.mascotaId,
+      mascotaNombre: cita.mascotaNombre || `Mascota #${cita.mascotaId}`,
+      veterinarioId: this.user?.id || 0,
+      motivo: cita.notas || 'Consulta médica general',
+      anamnesis: '',
+      examenFisico: '',
+      diagnostico: '',
+      tratamiento: '',
+      peso: 0,
+      temperatura: 38.5,
+      frecuenciaCardiaca: 100,
+      frecuenciaRespiratoria: 24,
+      trc: 'Normal',
+      notas: ''
+    };
+    this.isAtenderModalOpen = true;
+  }
+
+  guardarConsultaAtender() {
+    if (!this.nuevaConsulta.motivo || !this.nuevaConsulta.diagnostico || !this.nuevaConsulta.anamnesis) {
+      toast.warning("Motivo, Anamnesis y Diagnóstico son obligatorios.");
+      return;
+    }
+    this.guardandoConsulta = true;
+    this.consultaService.registrarConsulta(this.nuevaConsulta).subscribe({
+      next: (res) => {
+        this.guardandoConsulta = false;
+        this.isAtenderModalOpen = false;
+        toast.success("Paciente atendido y consulta registrada con éxito.");
+        this.cargarAgenda();
+      },
+      error: (err) => {
+        console.error('Error al registrar consulta', err);
+        this.guardandoConsulta = false;
+        toast.error("Ocurrió un error al registrar la consulta.");
       }
     });
   }
@@ -302,7 +370,7 @@ export class DoctorAgendaComponent implements OnInit {
         error: (err) => {
           console.error('Error actualizando estado', err);
           cita.estado = oldEstado; // Revert
-          alert("No se pudo actualizar el estado de la cita.");
+          toast.error("No se pudo actualizar el estado de la cita.");
         }
       });
     }

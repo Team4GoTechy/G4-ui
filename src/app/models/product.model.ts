@@ -8,4 +8,5 @@ export interface Product {
     categoria?: string;
     categoriaId?: number;
     imagenUrl?: string;
+    pesoKg?: number;
 }

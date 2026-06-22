@@ -66,12 +66,14 @@ import { gsap } from 'gsap';
               <div>
                 <label class="block text-xs font-bold text-slate-500 mb-1">Nombre del Producto</label>
                 <input formControlName="nombre" type="text" placeholder="Ej. Alimento Premium" class="w-full px-4 py-2.5 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-sky-400 outline-none font-bold text-gray-800 transition-colors">
+                <p *ngIf="productForm.get('nombre')?.invalid && productForm.get('nombre')?.touched" class="text-red-500 text-[10px] mt-1 font-bold">El nombre es obligatorio.</p>
               </div>
 
               <div class="grid grid-cols-2 gap-4">
                 <div>
                   <label class="block text-xs font-bold text-slate-500 mb-1">Código Único</label>
                   <input formControlName="codigo" type="text" placeholder="Ej. ART-123" class="w-full px-4 py-2.5 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-sky-400 outline-none font-bold text-gray-800 transition-colors">
+                  <p *ngIf="productForm.get('codigo')?.invalid && productForm.get('codigo')?.touched" class="text-red-500 text-[10px] mt-1 font-bold">El código es obligatorio.</p>
                 </div>
                 <div>
                   <label class="block text-xs font-bold text-slate-500 mb-1">Categoría</label>
@@ -79,6 +81,7 @@ import { gsap } from 'gsap';
                     <option value="" disabled>Seleccionar...</option>
                     <option *ngFor="let cat of categories" [value]="cat.id">{{ cat.nombre }}</option>
                   </select>
+                  <p *ngIf="productForm.get('categoriaId')?.invalid && productForm.get('categoriaId')?.touched" class="text-red-500 text-[10px] mt-1 font-bold">La categoría es obligatoria.</p>
                 </div>
               </div>
 
@@ -86,11 +89,22 @@ import { gsap } from 'gsap';
                 <div>
                   <label class="block text-xs font-bold text-slate-500 mb-1">Precio ($)</label>
                   <input formControlName="precio" type="number" min="0.01" step="0.01" class="w-full px-4 py-2.5 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-sky-400 outline-none font-bold text-gray-800 transition-colors">
+                  <p *ngIf="productForm.get('precio')?.invalid && productForm.get('precio')?.touched" class="text-red-500 text-[10px] mt-1 font-bold">Mínimo 0.01.</p>
                 </div>
                 <div>
                   <label class="block text-xs font-bold text-slate-500 mb-1">Stock Inicial</label>
                   <input formControlName="stock" type="number" min="0" class="w-full px-4 py-2.5 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-sky-400 outline-none font-bold text-gray-800 transition-colors">
+                  <p *ngIf="productForm.get('stock')?.invalid && productForm.get('stock')?.touched" class="text-red-500 text-[10px] mt-1 font-bold">Mínimo 0.</p>
                 </div>
+              </div>
+
+              <div class="grid grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-xs font-bold text-slate-500 mb-1">Peso (Kg) (Opcional)</label>
+                  <input formControlName="pesoKg" type="number" step="0.01" min="0" placeholder="Ej. 15.5" class="w-full px-4 py-2.5 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-sky-400 outline-none font-bold text-gray-800 transition-colors">
+                  <p *ngIf="productForm.get('pesoKg')?.invalid && productForm.get('pesoKg')?.touched" class="text-red-500 text-[10px] mt-1 font-bold">El peso debe ser positivo.</p>
+                </div>
+                <div></div>
               </div>
             </div>
           </div>
@@ -107,16 +121,21 @@ import { gsap } from 'gsap';
       </div>
     </div>
 
-    <!--======================= MODAL: CREAR CATEGORÍA =======================-->
+    <!--======================= MODAL: CREAR/EDITAR CATEGORÍA =======================-->
     <div *ngIf="isCategoryModalOpen" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50 category-modal-backdrop opacity-0">
       <div class="bg-white rounded-3xl shadow-2xl border border-gray-100 max-w-sm w-full p-8 relative category-modal-content opacity-0">
-        <h3 class="text-2xl font-black text-slate-800 mb-2">Nueva Categoría</h3>
-        <p class="text-slate-400 text-sm font-bold mb-6">Registra una nueva categoría de productos</p>
+        <h3 class="text-2xl font-black text-slate-800 mb-2">
+          {{ isEditingCategory ? 'Editar Categoría' : 'Nueva Categoría' }}
+        </h3>
+        <p class="text-slate-400 text-sm font-bold mb-6">
+          {{ isEditingCategory ? 'Modifica los datos de la categoría' : 'Registra una nueva categoría de productos' }}
+        </p>
 
         <form [formGroup]="categoryForm" (ngSubmit)="onSubmitCategory()" class="space-y-4">
           <div>
             <label class="block text-xs font-bold text-slate-500 mb-1">Nombre de la Categoría</label>
             <input formControlName="nombre" type="text" placeholder="Ej. Juguetes, Farmacia" class="w-full px-4 py-2.5 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-400 outline-none font-bold text-gray-800 transition-colors">
+            <p *ngIf="categoryForm.get('nombre')?.invalid && categoryForm.get('nombre')?.touched" class="text-red-500 text-[10px] mt-1 font-bold">El nombre es obligatorio.</p>
           </div>
 
           <div>
@@ -129,7 +148,7 @@ import { gsap } from 'gsap';
               Cancelar
             </button>
             <button type="submit" [disabled]="categoryForm.invalid" class="bg-orange-500 hover:bg-orange-600 active:scale-95 hover:scale-[1.02] disabled:opacity-50 disabled:pointer-events-none text-white font-extrabold py-2.5 px-6 rounded-xl transition-all duration-200 text-sm shadow-md hover:shadow-orange-500/30 cursor-pointer">
-              Guardar
+              {{ isEditingCategory ? 'Actualizar' : 'Guardar' }}
             </button>
           </div>
         </form>
@@ -146,7 +165,7 @@ import { gsap } from 'gsap';
         </div>
         <h3 class="text-xl font-black text-slate-800 mb-2 text-center">¿Estás seguro?</h3>
         <p class="text-slate-500 text-sm font-bold text-center mb-6">
-          Vas a eliminar "{{ deleteName }}". Esta acción no se puede deshacer.
+          Vas a eliminar "{{ deleteName }}" <span *ngIf="deleteTarget === 'product' && deleteCode">[{{ deleteCode }}]</span>. Esta acción no se puede deshacer.
         </p>
         <div class="flex justify-center gap-3">
           <button type="button" (click)="closeDeleteModal()" class="bg-gray-100 hover:bg-gray-200 active:scale-95 text-gray-600 font-extrabold py-2.5 px-6 rounded-xl transition-all duration-200 text-sm cursor-pointer">
@@ -241,7 +260,7 @@ import { gsap } from 'gsap';
                     <button (click)="editProduct(p)" class="text-sky-500 hover:text-sky-600 transition-colors active:scale-90" title="Editar">
                       <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                     </button>
-                    <button (click)="confirmDeleteProduct(p.id!, p.nombre)" class="text-red-400 hover:text-red-500 transition-colors active:scale-90" title="Eliminar">
+                    <button (click)="confirmDeleteProduct(p.id!, p.nombre, p.codigo)" class="text-red-400 hover:text-red-500 transition-colors active:scale-90" title="Eliminar">
                       <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                     </button>
                   </div>
@@ -275,7 +294,10 @@ import { gsap } from 'gsap';
                 <td class="p-4 font-extrabold text-slate-800">{{ c.nombre }}</td>
                 <td class="p-4 text-slate-500">{{ c.descripcion || '-' }}</td>
                 <td class="p-4">
-                  <div class="flex items-center justify-center">
+                  <div class="flex items-center justify-center gap-3">
+                    <button (click)="editCategory(c)" class="text-sky-500 hover:text-sky-600 transition-colors active:scale-90" title="Editar">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                    </button>
                     <button (click)="confirmDeleteCategory(c.id!, c.nombre)" class="text-red-400 hover:text-red-500 transition-colors active:scale-90" title="Eliminar">
                       <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                     </button>
@@ -308,10 +330,14 @@ export class AdminProductosComponent implements OnInit {
   isEditingProduct = false;
   selectedProductId: number | null = null;
 
+  isEditingCategory = false;
+  selectedCategoryId: number | null = null;
+
   isDeleteModalOpen = false;
   deleteTarget: 'product' | 'category' = 'product';
   deleteId: number | null = null;
   deleteName = '';
+  deleteCode = '';
 
   isUploading = false;
 
@@ -326,7 +352,8 @@ export class AdminProductosComponent implements OnInit {
       precio: [0.01, [Validators.required, Validators.min(0.01)]],
       stock: [0, [Validators.required, Validators.min(0)]],
       categoriaId: ['', Validators.required],
-      imagenUrl: ['']
+      imagenUrl: [''],
+      pesoKg: [null, [Validators.min(0)]]
     });
 
     this.categoryForm = this.fb.group({
@@ -403,7 +430,8 @@ export class AdminProductosComponent implements OnInit {
       precio: 0.01,
       stock: 0,
       categoriaId: '',
-      imagenUrl: ''
+      imagenUrl: '',
+      pesoKg: null
     });
     this.isProductModalOpen = true;
 
@@ -418,7 +446,12 @@ export class AdminProductosComponent implements OnInit {
   }
 
   openCategoryModal() {
-    this.categoryForm.reset();
+    this.isEditingCategory = false;
+    this.selectedCategoryId = null;
+    this.categoryForm.reset({
+      nombre: '',
+      descripcion: ''
+    });
     this.isCategoryModalOpen = true;
 
     // Animación de entrada de GSAP
@@ -479,7 +512,8 @@ export class AdminProductosComponent implements OnInit {
       precio: product.precio,
       stock: product.stock,
       categoriaId: catId,
-      imagenUrl: product.imagenUrl || ''
+      imagenUrl: product.imagenUrl || '',
+      pesoKg: product.pesoKg || null
     });
     this.isProductModalOpen = true;
 
@@ -493,10 +527,11 @@ export class AdminProductosComponent implements OnInit {
     });
   }
 
-  confirmDeleteProduct(id: number, name: string) {
+  confirmDeleteProduct(id: number, name: string, codigo: string) {
     this.deleteTarget = 'product';
     this.deleteId = id;
     this.deleteName = name;
+    this.deleteCode = codigo;
     this.isDeleteModalOpen = true;
     setTimeout(() => {
       gsap.fromTo('.delete-modal-backdrop', { opacity: 0 }, { opacity: 1, duration: 0.25 });
@@ -515,6 +550,23 @@ export class AdminProductosComponent implements OnInit {
     setTimeout(() => {
       gsap.fromTo('.delete-modal-backdrop', { opacity: 0 }, { opacity: 1, duration: 0.25 });
       gsap.fromTo('.delete-modal-content', 
+        { scale: 0.85, y: 40, opacity: 0 }, 
+        { scale: 1, y: 0, opacity: 1, duration: 0.35, ease: 'back.out(1.4)' }
+      );
+    });
+  }
+
+  editCategory(category: any) {
+    this.isEditingCategory = true;
+    this.selectedCategoryId = category.id || null;
+    this.categoryForm.patchValue({
+      nombre: category.nombre,
+      descripcion: category.descripcion || ''
+    });
+    this.isCategoryModalOpen = true;
+    setTimeout(() => {
+      gsap.fromTo('.category-modal-backdrop', { opacity: 0 }, { opacity: 1, duration: 0.25 });
+      gsap.fromTo('.category-modal-content', 
         { scale: 0.85, y: 40, opacity: 0 }, 
         { scale: 1, y: 0, opacity: 1, duration: 0.35, ease: 'back.out(1.4)' }
       );
@@ -600,16 +652,30 @@ export class AdminProductosComponent implements OnInit {
 
   onSubmitCategory() {
     if (this.categoryForm.valid) {
-      this.productService.createCategory(this.categoryForm.value).subscribe({
-        next: () => {
-          toast.success('Categoría creada con éxito');
-          this.closeCategoryModal();
-          this.loadCategories();
-        },
-        error: (err) => {
-          toast.error('Error al crear categoría');
-        }
-      });
+      if (this.isEditingCategory && this.selectedCategoryId !== null) {
+        this.productService.updateCategory(this.selectedCategoryId, this.categoryForm.value).subscribe({
+          next: () => {
+            toast.success('Categoría actualizada con éxito');
+            this.closeCategoryModal();
+            this.loadCategories();
+            this.loadProducts();
+          },
+          error: (err) => {
+            toast.error('Error al actualizar categoría');
+          }
+        });
+      } else {
+        this.productService.createCategory(this.categoryForm.value).subscribe({
+          next: () => {
+            toast.success('Categoría creada con éxito');
+            this.closeCategoryModal();
+            this.loadCategories();
+          },
+          error: (err) => {
+            toast.error('Error al crear categoría');
+          }
+        });
+      }
     }
   }
 }

@@ -19,6 +19,9 @@ export class RegisterComponent implements OnInit {
   registerForm!: FormGroup;
   isLoading = false;
   currentStep = 1;
+  showPassword = false;
+  emailExists = false;
+  checkingEmail = false;
   avatars = [
     '/assets/images/avatars/chico.jpg',
     '/assets/images/avatars/chica.jpg',
@@ -40,8 +43,32 @@ export class RegisterComponent implements OnInit {
       mascotas: this.fb.array([])
     });
 
+    // Check email uniqueness on value changes
+    this.registerForm.get('email')?.valueChanges.subscribe(val => {
+      this.emailExists = false;
+      if (this.registerForm.get('email')?.valid && val) {
+        this.checkingEmail = true;
+        this.authService.checkEmail(val).subscribe({
+          next: (exists) => {
+            this.emailExists = exists;
+            this.checkingEmail = false;
+            if (exists) {
+              this.registerForm.get('email')?.setErrors({ emailTaken: true });
+            }
+          },
+          error: () => {
+            this.checkingEmail = false;
+          }
+        });
+      }
+    });
+
     // Inicializar con una mascota por defecto
     this.addMascota();
+  }
+
+  togglePassword() {
+    this.showPassword = !this.showPassword;
   }
 
   get mascotasArray() {
@@ -52,7 +79,8 @@ export class RegisterComponent implements OnInit {
     this.mascotasArray.push(this.fb.group({
       nombre: ['', Validators.required],
       sexo: ['Macho', Validators.required],
-      tipo: ['Perro', Validators.required]
+      tipo: ['Perro', Validators.required],
+      raza: ['']
     }));
     this.syncCantidadMascotas();
   }
@@ -111,6 +139,13 @@ export class RegisterComponent implements OnInit {
   }
 
   onSubmit() {
+    if (this.emailExists) {
+      toast.error('Correo duplicado', {
+        description: 'El correo electrónico ya se encuentra registrado.'
+      });
+      return;
+    }
+
     if (this.registerForm.valid) {
       this.isLoading = true;
       

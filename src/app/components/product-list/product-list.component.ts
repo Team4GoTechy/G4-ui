@@ -77,19 +77,20 @@ export class ProductListComponent implements OnInit {
   }
 
   // Lógica del Carrito
-  addToCart(product: Product) {
+  addToCart(product: Product, quantity: number = 1) {
     if (product.stock > 0) {
       const item = this.cart.find(i => i.product.id === product.id);
-      if (item) {
-        if (item.quantity < product.stock) {
-          item.quantity++;
-          toast.success(`Se añadió una unidad más de ${product.nombre}`);
+      const currentQty = item ? item.quantity : 0;
+      if (currentQty + quantity <= product.stock) {
+        if (item) {
+          item.quantity += quantity;
+          toast.success(`Se añadieron ${quantity} unidades más de ${product.nombre}`);
         } else {
-          toast.warning('No hay suficiente stock disponible');
+          this.cart.push({ product, quantity });
+          toast.success(`${quantity} x ${product.nombre} agregado al carrito`);
         }
       } else {
-        this.cart.push({ product, quantity: 1 });
-        toast.success(`${product.nombre} agregado al carrito`);
+        toast.warning(`No hay suficiente stock disponible. Stock: ${product.stock}`);
       }
     }
   }

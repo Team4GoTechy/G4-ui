@@ -4,9 +4,11 @@ import { FormsModule } from '@angular/forms';
 import { CitaService } from '../../services/cita.service';
 import { MascotaService } from '../../services/mascota.service';
 import { VeterinarioService } from '../../services/veterinario.service';
+import { ServicioService } from '../../services/servicio.service';
 import { CitaResponse } from '../../models/cita.model';
 import { MascotaResponse } from '../../models/mascota.model';
 import { VeterinarioResponse } from '../../models/veterinario.model';
+import { ServicioResponse } from '../../models/servicio.model';
 
 @Component({
   selector: 'app-client-turnos',
@@ -18,10 +20,13 @@ export class ClientTurnosComponent implements OnInit {
   private citaService = inject(CitaService);
   private mascotaService = inject(MascotaService);
   private veterinarioService = inject(VeterinarioService);
+  private servicioService = inject(ServicioService);
 
   citas: CitaResponse[] = [];
   mascotas: MascotaResponse[] = [];
   veterinarios: VeterinarioResponse[] = [];
+  servicios: ServicioResponse[] = [];
+  veterinariosFiltrados: VeterinarioResponse[] = [];
 
   loadingCitas = false;
   loadingVets = false;
@@ -34,13 +39,12 @@ export class ClientTurnosComponent implements OnInit {
 
   // Form State
   mascotaSeleccionadaId: number | null = null;
+  servicioSeleccionado: ServicioResponse | null = null;
   doctorSeleccionado: VeterinarioResponse | null = null;
-  tipoCitaSeleccionado = 'CONSULTA';
   fechaSeleccionada = '';
   slotSeleccionado: string | null = null;
   notas = '';
 
-  tiposCita = ['CONSULTA', 'VACUNACION', 'CIRUGIA', 'GROOMING', 'CONTROL'];
   horasDisponibles: { hora: string; disponible: boolean }[] = [];
 
   slotsDefecto = [
@@ -53,6 +57,7 @@ export class ClientTurnosComponent implements OnInit {
     this.cargarCitas();
     this.cargarMascotas();
     this.cargarVeterinarios();
+    this.cargarServicios();
   }
 
   cargarCitas(): void {
@@ -95,6 +100,28 @@ export class ClientTurnosComponent implements OnInit {
         this.loadingVets = false;
       }
     });
+  }
+
+  cargarServicios(): void {
+    this.servicioService.listarTodos().subscribe({
+      next: (data) => {
+        this.servicios = data || [];
+      },
+      error: (err) => console.error('Error cargando servicios', err)
+    });
+  }
+
+  onServicioChange(): void {
+    this.doctorSeleccionado = null;
+    this.slotSeleccionado = null;
+    this.horasDisponibles = [];
+    
+    if (this.servicioSeleccionado) {
+      const associatedIds = this.servicioSeleccionado.veterinarios.map(v => v.id);
+      this.veterinariosFiltrados = this.veterinarios.filter(v => associatedIds.includes(v.id));
+    } else {
+      this.veterinariosFiltrados = [];
+    }
   }
 
   seleccionarDoctor(vet: VeterinarioResponse): void {
@@ -145,7 +172,7 @@ export class ClientTurnosComponent implements OnInit {
   }
 
   reservarTurno(): void {
-    if (!this.mascotaSeleccionadaId || !this.doctorSeleccionado || !this.fechaSeleccionada || !this.slotSeleccionado) {
+    if (!this.mascotaSeleccionadaId || !this.servicioSeleccionado || !this.doctorSeleccionado || !this.fechaSeleccionada || !this.slotSeleccionado) {
       this.mensajeError = 'Por favor complete todos los pasos de la reserva.';
       return;
     }
@@ -156,13 +183,30 @@ export class ClientTurnosComponent implements OnInit {
 
     const fechaHora = `${this.fechaSeleccionada}T${this.slotSeleccionado}:00`;
 
+    // Map service name to Cita enum
+    let tipoCita = 'CONSULTA';
+    if (this.servicioSeleccionado) {
+      const nombre = this.servicioSeleccionado.nombre.toLowerCase();
+      if (nombre.includes('vacuna')) {
+        tipoCita = 'VACUNACION';
+      } else if (nombre.includes('cirug') || nombre.includes('operac')) {
+        tipoCita = 'CIRUGIA';
+      } else if (nombre.includes('baño') || nombre.includes('peluquer') || nombre.includes('groom')) {
+        tipoCita = 'GROOMING';
+      } else if (nombre.includes('control') || nombre.includes('seguim')) {
+        tipoCita = 'CONTROL';
+      }
+    }
+
+    const notasCompletas = `Servicio: ${this.servicioSeleccionado.nombre} ($ ${this.servicioSeleccionado.precio})` + (this.notas.trim() ? ` - Notas: ${this.notas}` : '');
+
     const payload = {
       mascotaId: this.mascotaSeleccionadaId,
       veterinarioId: this.doctorSeleccionado.usuarioId,
-      tipoCita: this.tipoCitaSeleccionado,
+      tipoCita: tipoCita,
       fechaHora: fechaHora,
       duracionMinutos: 30,
-      notas: this.notas
+      notas: notasCompletas
     };
 
     this.citaService.crearCita(payload).subscribe({
@@ -171,11 +215,13 @@ export class ClientTurnosComponent implements OnInit {
         this.submitting = false;
         // Reset Form
         this.mascotaSeleccionadaId = null;
+        this.servicioSeleccionado = null;
         this.doctorSeleccionado = null;
         this.fechaSeleccionada = '';
         this.slotSeleccionado = null;
         this.notas = '';
         this.horasDisponibles = [];
+        this.veterinariosFiltrados = [];
         // Reload List
         this.cargarCitas();
       },

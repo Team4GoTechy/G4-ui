@@ -6,6 +6,7 @@ import { MascotaService } from '../../services/mascota.service';
 import { AuthService } from '../../services/auth.service';
 import { InternacionResponse, InternacionRequest, EvolucionRequest } from '../../models/internacion.model';
 import { MascotaResponse } from '../../models/mascota.model';
+import { toast } from 'ngx-sonner';
 
 @Component({
   selector: 'app-doctor-internaciones',
@@ -116,18 +117,19 @@ export class DoctorInternacionesComponent implements OnInit {
 
   guardarIngreso() {
     if (!this.nuevoIngreso.mascotaId || !this.nuevoIngreso.motivo || !this.nuevoIngreso.jaulaId) {
-      alert('Por favor, complete todos los campos obligatorios.');
+      toast.warning('Por favor, complete todos los campos obligatorios.');
       return;
     }
 
     this.internacionService.ingresar(this.nuevoIngreso).subscribe({
       next: () => {
+        toast.success('Ingreso registrado correctamente.');
         this.cerrarIngresoModal();
         this.cargarInternaciones();
       },
       error: (err) => {
         console.error('Error al ingresar paciente', err);
-        alert('Ocurrió un error al registrar el ingreso.');
+        toast.error('Ocurrió un error al registrar el ingreso.');
       }
     });
   }
@@ -151,18 +153,19 @@ export class DoctorInternacionesComponent implements OnInit {
 
   guardarEvolucion() {
     if (!this.internacionSeleccionada || !this.nuevaEvolucion.observacion) {
-      alert('La observación es obligatoria.');
+      toast.warning('La observación es obligatoria.');
       return;
     }
 
     this.internacionService.registrarEvolucion(this.internacionSeleccionada.id, this.nuevaEvolucion).subscribe({
       next: () => {
+        toast.success('Evolución guardada correctamente.');
         this.cerrarEvolucionModal();
         this.cargarInternaciones(); // Recargar para obtener la nueva evolución
       },
       error: (err) => {
         console.error('Error registrando evolución', err);
-        alert('Ocurrió un error al guardar la evolución.');
+        toast.error('Ocurrió un error al guardar la evolución.');
       }
     });
   }
@@ -183,18 +186,19 @@ export class DoctorInternacionesComponent implements OnInit {
   guardarAlta() {
     if (!this.internacionAltaSeleccionada) return;
     if (!this.indicacionesAlta.trim()) {
-      alert('Las indicaciones de cuidado post-alta son obligatorias.');
+      toast.warning('Las indicaciones de cuidado post-alta son obligatorias.');
       return;
     }
 
     this.internacionService.darDeAlta(this.internacionAltaSeleccionada.id, this.indicacionesAlta).subscribe({
       next: () => {
+        toast.success('Paciente dado de alta correctamente.');
         this.cerrarAltaModal();
         this.cargarInternaciones();
       },
       error: (err) => {
         console.error('Error dando de alta', err);
-        alert('Ocurrió un error al dar de alta al paciente.');
+        toast.error('Ocurrió un error al dar de alta al paciente.');
       }
     });
   }
@@ -214,19 +218,20 @@ export class DoctorInternacionesComponent implements OnInit {
 
   guardarConfirmacionReingreso() {
     if (!this.reingresoSeleccionado || !this.jaulaReingreso.trim()) {
-      alert('Debes ingresar un ID de jaula física para aceptar al paciente.');
+      toast.warning('Debes ingresar un ID de jaula física para aceptar al paciente.');
       return;
     }
 
     this.internacionService.confirmarReingreso(this.reingresoSeleccionado.id, this.jaulaReingreso).subscribe({
       next: () => {
+        toast.success('Reingreso confirmado exitosamente.');
         this.cerrarAprobarReingresoModal();
         this.cargarInternaciones();
         this.cargarSolicitudes();
       },
       error: (err) => {
         console.error('Error al confirmar reingreso', err);
-        alert('Ocurrió un error al procesar el reingreso.');
+        toast.error('Ocurrió un error al procesar el reingreso.');
       }
     });
   }
