@@ -66,17 +66,40 @@
             <div *ngIf="servicioSeleccionado && veterinariosFiltrados.length === 0" class="text-xs text-slate-400 italic bg-slate-50 p-3 rounded-xl border border-slate-150">
               No hay veterinarios asignados a este servicio actualmente.
             </div>
-
-            <div *ngIf="servicioSeleccionado && veterinariosFiltrados.length > 0" class="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-40 overflow-y-auto pr-1 custom-scrollbar">
-              <div *ngFor="let vet of veterinariosFiltrados" 
-                   (click)="seleccionarDoctor(vet)"
-                   class="p-2.5 rounded-xl border-2 cursor-pointer transition-all flex items-center gap-3 bg-slate-50/50"
-                   [ngClass]="doctorSeleccionado?.id === vet.id ? 'border-sky-400 bg-sky-50/20' : 'border-slate-100 hover:border-sky-200'">
+            <div *ngIf='servicioSeleccionado && veterinariosFiltrados.length > 0' class='grid grid-cols-1 gap-2 max-h-40 overflow-y-auto pr-1 custom-scrollbar'>
+              <div *ngFor='let vet of veterinariosFiltrados' 
+                   (click)='seleccionarDoctor(vet)'
+                   class="p-2.5 rounded-xl border-2 cursor-pointer transition-all flex items-center gap-3"
+                   [ngClass]="getDoctorCardClasses(vet.id, doctorSeleccionado?.id === vet.id)">
                 <img [src]="getDoctorAvatar(vet.avatar)" class="w-10 h-10 rounded-full border border-gray-200 object-cover shadow-sm shrink-0">
                 <div class="min-w-0">
-                  <p class="font-extrabold text-slate-800 text-xs truncate">{{ vet.nombreCompleto || vet.nombreUsuario }}</p>
+                  <p class="font-extrabold text-slate-800 text-xs truncate">{{ vet.nombreCompleto }}</p>
                   <p class="text-[10px] text-slate-500 font-semibold truncate">{{ vet.especialidad || 'Veterinario' }}</p>
                 </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Horarios de atención del doctor seleccionado -->
+          <div *ngIf='doctorSeleccionado && horariosDoctor.length > 0' 
+               class='mt-3.5 p-3.5 border rounded-xl animate-fade-in'
+               [ngClass]="getDoctorScheduleCardClasses(doctorSeleccionado.id)">
+            <p class='text-[11px] font-black flex items-start gap-1.5 mb-2'
+               [ngClass]="getDoctorScheduleTextClasses(doctorSeleccionado.id)">
+              <svg xmlns='http://www.w3.org/2000/svg' class='h-3.5 w-3.5 shrink-0 mt-0.5' 
+                   [ngClass]="getDoctorNameTextClasses(doctorSeleccionado.id)" fill='none' viewBox='0 0 24 24' stroke='currentColor'>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span class="leading-normal">
+                Días y Horarios de Atención del Dr. <span class="font-extrabold" [ngClass]="getDoctorNameTextClasses(doctorSeleccionado.id)" [textContent]='doctorSeleccionado.nombreCompleto'></span>:
+              </span>
+            </p>
+            <div class='grid grid-cols-1 gap-y-1.5 font-bold text-[10px] text-slate-600'>
+              <div *ngFor='let h of horariosDoctor' 
+                   class='flex justify-between border-b pb-0.5'
+                   [ngClass]="getDoctorScheduleRowClasses(doctorSeleccionado.id)">
+                <span class='text-slate-500'>{{ h.nombreDia }}:</span>
+                <span class='font-extrabold'>{{ h.horaInicio?.substring(0, 5) }} - {{ h.horaFin?.substring(0, 5) }} hs</span>
               </div>
             </div>
           </div>
@@ -100,14 +123,10 @@
 
             <div *ngIf="!loadingSlots" class="grid grid-cols-4 gap-1.5 max-h-48 overflow-y-auto pr-1 custom-scrollbar">
               <button type="button" *ngFor="let h of horasDisponibles"
-                      [disabled]="!h.disponible"
-                      (click)="seleccionarSlot(h.hora)"
-                      class="py-2 rounded-lg border text-[11px] font-extrabold transition-all"
-                      [ngClass]="{
-                        'border-slate-100 bg-slate-50 text-slate-300 cursor-not-allowed': !h.disponible,
-                        'border-orange-400 bg-orange-50/70 text-orange-600 font-black shadow-sm': slotSeleccionado === h.hora,
-                        'border-slate-200 text-slate-700 hover:border-orange-200 hover:bg-orange-50/20 bg-white': h.disponible && slotSeleccionado !== h.hora
-                      }">
+                       [disabled]="!h.disponible"
+                       (click)="seleccionarSlot(h.hora)"
+                       class="py-2 rounded-lg border text-[11px] font-extrabold transition-all"
+                       [ngClass]="!h.disponible ? 'border-slate-100 bg-slate-50 text-slate-300 cursor-not-allowed' : getDoctorColorClasses(doctorSeleccionado.id, slotSeleccionado === h.hora)">
                 {{ h.hora }}
               </button>
             </div>

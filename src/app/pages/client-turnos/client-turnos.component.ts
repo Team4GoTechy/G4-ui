@@ -7,9 +7,8 @@ import { VeterinarioService } from '../../services/veterinario.service';
 import { ServicioService } from '../../services/servicio.service';
 import { CitaResponse } from '../../models/cita.model';
 import { MascotaResponse } from '../../models/mascota.model';
-import { VeterinarioResponse } from '../../models/veterinario.model';
+import { VeterinarioResponse, HorarioResponse } from '../../models/veterinario.model';
 import { ServicioResponse } from '../../models/servicio.model';
-
 @Component({
   selector: 'app-client-turnos',
   standalone: true,
@@ -27,6 +26,7 @@ export class ClientTurnosComponent implements OnInit {
   veterinarios: VeterinarioResponse[] = [];
   servicios: ServicioResponse[] = [];
   veterinariosFiltrados: VeterinarioResponse[] = [];
+  horariosDoctor: HorarioResponse[] = [];
 
   loadingCitas = false;
   loadingVets = false;
@@ -90,7 +90,7 @@ export class ClientTurnosComponent implements OnInit {
 
   cargarVeterinarios(): void {
     this.loadingVets = true;
-    this.veterinarioService.listarTodos().subscribe({
+    this.veterinarioService.listarActivos().subscribe({
       next: (data) => {
         this.veterinarios = (data || []).filter(v => v.activo);
         this.loadingVets = false;
@@ -127,7 +127,21 @@ export class ClientTurnosComponent implements OnInit {
   seleccionarDoctor(vet: VeterinarioResponse): void {
     this.doctorSeleccionado = vet;
     this.slotSeleccionado = null;
+    this.horariosDoctor = [];
+    this.cargarHorariosDoctor(vet.id);
     this.actualizarSlotsDisponibles();
+  }
+
+  cargarHorariosDoctor(vetId: number): void {
+    this.veterinarioService.listarHorarios(vetId).subscribe({
+      next: (data) => {
+        this.horariosDoctor = (data || []).filter(h => h.trabaja);
+      },
+      error: (err) => {
+        console.error('Error cargando horarios del doctor', err);
+        this.horariosDoctor = [];
+      }
+    });
   }
 
   onFechaChange(): void {
@@ -151,10 +165,28 @@ export class ClientTurnosComponent implements OnInit {
             return timePart ? timePart.substring(0, 5) : '';
           });
 
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const localTodayStr = `${year}-${month}-${day}`;
+        const currentHour = now.getHours();
+        const currentMin = now.getMinutes();
+
         this.horasDisponibles = this.slotsDefecto.map(slot => {
+          let disponible = !bookedHours.includes(slot);
+
+          // Si es hoy, inhabilitar horarios que ya pasaron
+          if (this.fechaSeleccionada === localTodayStr) {
+            const [slotHour, slotMin] = slot.split(':').map(Number);
+            if (slotHour < currentHour || (slotHour === currentHour && slotMin <= currentMin)) {
+              disponible = false;
+            }
+          }
+
           return {
             hora: slot,
-            disponible: !bookedHours.includes(slot)
+            disponible: disponible
           };
         });
         this.loadingSlots = false;
@@ -175,6 +207,23 @@ export class ClientTurnosComponent implements OnInit {
     if (!this.mascotaSeleccionadaId || !this.servicioSeleccionado || !this.doctorSeleccionado || !this.fechaSeleccionada || !this.slotSeleccionado) {
       this.mensajeError = 'Por favor complete todos los pasos de la reserva.';
       return;
+    }
+
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const localTodayStr = `${year}-${month}-${day}`;
+    const currentHour = now.getHours();
+    const currentMin = now.getMinutes();
+
+    // Validar por si acaso que el slot no haya pasado en tiempo real
+    if (this.fechaSeleccionada === localTodayStr) {
+      const [slotHour, slotMin] = this.slotSeleccionado.split(':').map(Number);
+      if (slotHour < currentHour || (slotHour === currentHour && slotMin <= currentMin)) {
+        this.mensajeError = 'El horario seleccionado ya ha pasado en el día de hoy. Por favor elige otro horario.';
+        return;
+      }
     }
 
     this.submitting = true;
@@ -270,11 +319,116 @@ export class ClientTurnosComponent implements OnInit {
     return now.toISOString().split('T')[0];
   }
 
-  getDoctorAvatar(avatar: string | null | undefined): string {
-    if (!avatar) return '/assets/images/avatars/señor.jpg';
+  getDoctorAvatar(avatar: any): string {
+    if (!avatar) return '/assets/images/avatars/chico.jpg';
     if (avatar.startsWith('http') || avatar.startsWith('/') || avatar.startsWith('assets/')) {
       return avatar;
     }
     return '/assets/images/avatars/' + avatar;
+  }
+
+  // Clases de color dinámicas según el doctor para UI Premium
+  getDoctorColorClasses(vetId: number, isSelected: boolean): string {
+    const colors = [
+      {
+        selected: 'border-orange-400 bg-orange-50/70 text-orange-600 font-black shadow-sm',
+        hover: 'border-slate-200 text-slate-700 hover:border-orange-200 hover:bg-orange-50/20 bg-white'
+      },
+      {
+        selected: 'border-emerald-400 bg-emerald-50/70 text-emerald-600 font-black shadow-sm',
+        hover: 'border-slate-200 text-slate-700 hover:border-emerald-200 hover:bg-emerald-50/20 bg-white'
+      },
+      {
+        selected: 'border-sky-400 bg-sky-50/70 text-sky-600 font-black shadow-sm',
+        hover: 'border-slate-200 text-slate-700 hover:border-sky-200 hover:bg-sky-50/20 bg-white'
+      },
+      {
+        selected: 'border-rose-400 bg-rose-50/70 text-rose-600 font-black shadow-sm',
+        hover: 'border-slate-200 text-slate-700 hover:border-rose-200 hover:bg-rose-50/20 bg-white'
+      },
+      {
+        selected: 'border-violet-400 bg-violet-50/70 text-violet-600 font-black shadow-sm',
+        hover: 'border-slate-200 text-slate-700 hover:border-violet-200 hover:bg-violet-50/20 bg-white'
+      }
+    ];
+    const index = vetId % colors.length;
+    const colorTheme = colors[index] || colors[0];
+    return isSelected ? colorTheme.selected : colorTheme.hover;
+  }
+
+  getDoctorCardClasses(vetId: number, isSelected: boolean): string {
+    const cardColors = [
+      {
+        selected: 'border-orange-400 bg-orange-50/20',
+        hover: 'border-slate-100 hover:border-orange-200 bg-slate-50/50 shadow-sm'
+      },
+      {
+        selected: 'border-emerald-400 bg-emerald-50/20',
+        hover: 'border-slate-100 hover:border-emerald-200 bg-slate-50/50 shadow-sm'
+      },
+      {
+        selected: 'border-sky-400 bg-sky-50/20',
+        hover: 'border-slate-100 hover:border-sky-200 bg-slate-50/50 shadow-sm'
+      },
+      {
+        selected: 'border-rose-400 bg-rose-50/20',
+        hover: 'border-slate-100 hover:border-rose-200 bg-slate-50/50 shadow-sm'
+      },
+      {
+        selected: 'border-violet-400 bg-violet-50/20',
+        hover: 'border-slate-100 hover:border-violet-200 bg-slate-50/50 shadow-sm'
+      }
+    ];
+    const index = vetId % cardColors.length;
+    const theme = cardColors[index] || cardColors[0];
+    return isSelected ? theme.selected : theme.hover;
+  }
+
+  getDoctorScheduleCardClasses(vetId: number): string {
+    const cardColors = [
+      'bg-orange-50/30 border-orange-100',
+      'bg-emerald-50/30 border-emerald-100',
+      'bg-sky-50/30 border-sky-100',
+      'bg-rose-50/30 border-rose-100',
+      'bg-violet-50/30 border-violet-100'
+    ];
+    const index = vetId % cardColors.length;
+    return cardColors[index] || cardColors[2];
+  }
+
+  getDoctorScheduleTextClasses(vetId: number): string {
+    const textColors = [
+      'text-orange-800',
+      'text-emerald-800',
+      'text-sky-800',
+      'text-rose-800',
+      'text-violet-800'
+    ];
+    const index = vetId % textColors.length;
+    return textColors[index] || textColors[2];
+  }
+
+  getDoctorNameTextClasses(vetId: number): string {
+    const nameColors = [
+      'text-orange-600',
+      'text-emerald-600',
+      'text-sky-600',
+      'text-rose-600',
+      'text-violet-600'
+    ];
+    const index = vetId % nameColors.length;
+    return nameColors[index] || nameColors[2];
+  }
+
+  getDoctorScheduleRowClasses(vetId: number): string {
+    const rowColors = [
+      'border-orange-50/50 text-orange-700',
+      'border-emerald-50/50 text-emerald-700',
+      'border-sky-50/50 text-sky-700',
+      'border-rose-50/50 text-rose-700',
+      'border-violet-50/50 text-violet-700'
+    ];
+    const index = vetId % rowColors.length;
+    return rowColors[index] || rowColors[2];
   }
 }

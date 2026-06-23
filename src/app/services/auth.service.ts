@@ -104,12 +104,24 @@ export class AuthService {
   listarTodosLosUsuarios(): Observable<any[]> {
     return this.http.get<any[]>('http://localhost:8080/usuario/list');
   }
-
   actualizarUsuarioLocal(user: User) {
     this.cookieService.set('currentUser', JSON.stringify(user), { path: '/', secure: true, sameSite: 'Strict' });
     this.currentUserSubject.next(user);
   }
 
+  actualizarPerfil(userData: any): Observable<any> {
+    return this.http.put<any>('http://localhost:8080/usuario/perfil', userData).pipe(
+      map(userResponse => {
+        const storedUser = this.getCurrentUser();
+        if (storedUser) {
+          const updatedUser = { ...storedUser, ...userResponse };
+          this.actualizarUsuarioLocal(updatedUser);
+          return updatedUser;
+        }
+        return userResponse;
+      })
+    );
+  }
   checkEmail(email: string): Observable<boolean> {
     return this.http.get<boolean>(`${this.API_URL}/check-email`, { params: { email } });
   }

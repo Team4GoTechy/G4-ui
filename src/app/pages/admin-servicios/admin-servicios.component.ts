@@ -69,8 +69,8 @@ import { toast } from 'ngx-sonner';
                 <img 
                   *ngFor="let vet of serv.veterinarios"
                   [src]="vet.avatar || '/assets/images/avatars/chico.jpg'"
-                  [title]="(vet.nombreCompleto || vet.nombreUsuario) + ' - ' + vet.especialidad"
-                  [alt]="vet.nombreCompleto || vet.nombreUsuario"
+                  [title]="vet.nombreCompleto + ' - ' + vet.especialidad"
+                  [alt]="vet.nombreCompleto"
                   class="inline-block h-8 w-8 rounded-full ring-2 ring-white object-cover" />
               </div>
               <ng-template #noVets>
@@ -204,7 +204,7 @@ import { toast } from 'ngx-sonner';
                     class="w-8 h-8 rounded-full object-cover ring-2 ring-slate-100" />
                   
                   <div class="overflow-hidden">
-                    <p class="text-xs font-extrabold text-slate-800 truncate">{{ vet.nombreCompleto || vet.nombreUsuario }}</p>
+                    <p class="text-xs font-extrabold text-slate-800 truncate">{{ vet.nombreCompleto }}</p>
                     <p class="text-[10px] text-slate-400 font-bold truncate">{{ vet.especialidad }}</p>
                   </div>
                 </div>

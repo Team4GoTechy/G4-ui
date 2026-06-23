@@ -2,7 +2,6 @@ export interface VeterinarioResponse {
   id: number;
   usuarioId: number;
   nombreCompleto: string;
-  nombreUsuario?: string;
   avatar?: string;
   email: string;
   telefono?: string;
