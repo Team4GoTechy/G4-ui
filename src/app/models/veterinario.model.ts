@@ -1,10 +1,32 @@
 export interface VeterinarioResponse {
   id: number;
   usuarioId: number;
-  nombreUsuario: string;
+  nombreCompleto: string;
+  nombreUsuario?: string;
+  avatar?: string;
+  email: string;
+  telefono?: string;
   matricula: string;
   especialidad: string;
-  bio: string;
+  bio?: string;
   activo: boolean;
-  avatar?: string;
+  serviciosHabilitados: string[];
+  fechaCreacion?: string;
+}
+
+export interface HorarioResponse {
+  id?: number;
+  diaSemana: number;
+  nombreDia?: string;
+  horaInicio?: string;
+  horaFin?: string;
+  trabaja: boolean;
+}
+
+export interface BloqueoFechaResponse {
+  id: number;
+  fechaInicio: string;
+  fechaFin: string;
+  motivo?: string;
+  createdAt?: string;
 }

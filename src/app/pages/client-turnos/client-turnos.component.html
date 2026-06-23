@@ -74,7 +74,7 @@
                    [ngClass]="doctorSeleccionado?.id === vet.id ? 'border-sky-400 bg-sky-50/20' : 'border-slate-100 hover:border-sky-200'">
                 <img [src]="getDoctorAvatar(vet.avatar)" class="w-10 h-10 rounded-full border border-gray-200 object-cover shadow-sm shrink-0">
                 <div class="min-w-0">
-                  <p class="font-extrabold text-slate-800 text-xs truncate">{{ vet.nombreUsuario }}</p>
+                  <p class="font-extrabold text-slate-800 text-xs truncate">{{ vet.nombreCompleto || vet.nombreUsuario }}</p>
                   <p class="text-[10px] text-slate-500 font-semibold truncate">{{ vet.especialidad || 'Veterinario' }}</p>
                 </div>
               </div>
