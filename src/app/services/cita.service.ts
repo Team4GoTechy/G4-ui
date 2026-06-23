@@ -40,6 +40,11 @@ export class CitaService {
     return this.http.get<CitaResponse[]>(`${this.API_URL}/mis-citas`);
   }
 
+  obtenerTodasLasCitas(veterinarioId: number): Observable<CitaResponse[]> {
+    let params = new HttpParams().set('veterinarioId', veterinarioId.toString());
+    return this.http.get<CitaResponse[]>(`${this.API_URL}/todas`, { params });
+  }
+
   pagarCita(id: number): Observable<CitaResponse> {
     return this.http.patch<CitaResponse>(`${this.API_URL}/${id}/pagar`, {});
   }
