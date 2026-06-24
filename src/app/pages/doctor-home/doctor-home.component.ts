@@ -136,6 +136,9 @@ import Swal from 'sweetalert2';
                     <button (click)="iniciarConsulta(cita)" class="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-[10px] px-3 py-2 rounded-xl transition-all">
                       Atender
                     </button>
+                    <button (click)="cancelarCita(cita.id)" class="border border-red-300 hover:bg-red-50 text-red-500 font-extrabold text-[10px] px-3 py-2 rounded-xl transition-all">
+                      Cancelar
+                    </button>
                   </ng-container>
 
                   <!-- Badge si es COMPLETADA o CANCELADA -->
@@ -327,7 +330,7 @@ export class DoctorHomeComponent implements OnInit {
 
     citas.forEach(c => {
       const cDate = new Date(c.fechaHora);
-      if (cDate >= monday && cDate < nextSaturday && c.estado !== 'CANCELADA') {
+      if (cDate >= monday && cDate < nextSaturday && c.estado !== 'CANCELADA' && c.estado !== 'CANCELADA_POR_MEDICO') {
         const dayIndex = cDate.getDay() - 1; // 0 para Lunes, 4 para Viernes
         if (dayIndex >= 0 && dayIndex < 5) {
           this.weeklyCitasCount[dayIndex]++;
@@ -342,7 +345,7 @@ export class DoctorHomeComponent implements OnInit {
 
     let totalVal = 0;
     citas.forEach(c => {
-      if (c.estado !== 'CANCELADA') {
+      if (c.estado !== 'CANCELADA' && c.estado !== 'CANCELADA_POR_MEDICO') {
         const type = c.tipoCita || 'CONSULTA';
         const pType = this.practiceTypes.find(p => p.key === type);
         if (pType) {
@@ -381,21 +384,68 @@ export class DoctorHomeComponent implements OnInit {
 
   cancelarCita(id: number) {
     Swal.fire({
-      title: '¿Cancelar este turno?',
-      text: 'Se enviará una notificación al cliente confirmando la cancelación.',
+      title: '¿Cómo deseas cancelar este turno?',
       icon: 'warning',
       showCancelButton: true,
+      showDenyButton: true,
       confirmButtonColor: '#ef4444',
+      denyButtonColor: '#f59e0b',
       cancelButtonColor: '#94a3b8',
-      confirmButtonText: 'Sí, cancelar',
+      confirmButtonText: 'Médico ausente (Reprogramable)',
+      denyButtonText: 'Cancelación regular (Cliente)',
       cancelButtonText: 'Volver',
       customClass: {
         popup: 'rounded-3xl font-nunito shadow-xl',
-        confirmButton: 'rounded-xl font-bold px-6 py-2.5',
-        cancelButton: 'rounded-xl font-bold px-6 py-2.5'
+        confirmButton: 'rounded-xl font-bold px-4 py-2.5 text-xs',
+        denyButton: 'rounded-xl font-bold px-4 py-2.5 text-xs',
+        cancelButton: 'rounded-xl font-bold px-4 py-2.5 text-xs'
       }
     }).then((result) => {
       if (result.isConfirmed) {
+        // Veterinario no asiste (CANCELADA_POR_MEDICO)
+        Swal.fire({
+          title: 'Motivo de la inasistencia',
+          input: 'text',
+          inputPlaceholder: 'Ej: Urgencia médica, enfermedad, imprevisto...',
+          showCancelButton: true,
+          confirmButtonColor: '#ef4444',
+          cancelButtonColor: '#94a3b8',
+          confirmButtonText: 'Confirmar cancelación',
+          cancelButtonText: 'Volver',
+          inputValidator: (value) => {
+            if (!value) {
+              return '¡Debes escribir un motivo!';
+            }
+            return null;
+          },
+          customClass: {
+            popup: 'rounded-3xl font-nunito shadow-xl',
+            confirmButton: 'rounded-xl font-bold px-6 py-2.5',
+            cancelButton: 'rounded-xl font-bold px-6 py-2.5'
+          }
+        }).then((motivoResult) => {
+          if (motivoResult.isConfirmed) {
+            const motivo = motivoResult.value;
+            this.citaService.actualizarEstado(id, 'CANCELADA_POR_MEDICO', motivo).subscribe({
+              next: () => {
+                Swal.fire({
+                  icon: 'success',
+                  title: 'Turno Cancelado',
+                  text: 'Se canceló el turno y se notificó al cliente para que pueda reprogramar.',
+                  timer: 2500,
+                  showConfirmButton: false,
+                  customClass: {
+                    popup: 'rounded-3xl font-nunito shadow-xl'
+                  }
+                });
+                this.cargarDatosDashboard();
+              },
+              error: (err) => console.error('Error al cancelar cita por inasistencia médica', err)
+            });
+          }
+        });
+      } else if (result.isDenied) {
+        // Cancelación estándar (CANCELADA)
         this.citaService.actualizarEstado(id, 'CANCELADA').subscribe({
           next: () => {
             Swal.fire({
@@ -417,7 +467,6 @@ export class DoctorHomeComponent implements OnInit {
   }
 
   iniciarConsulta(cita: CitaResponse) {
-    // Redirigir a historias clínicas con el id de la mascota (si el componente lo soporta)
     this.router.navigate(['/doctor/historias']);
   }
 
@@ -433,6 +482,7 @@ export class DoctorHomeComponent implements OnInit {
       case 'EN_PROGRESO': return 'En Curso';
       case 'COMPLETADA': return 'Completado';
       case 'CANCELADA': return 'Cancelada';
+      case 'CANCELADA_POR_MEDICO': return 'Cancelada (Médico)';
       case 'NO_ASISTIO': return 'No Asistió';
       default: return estado;
     }

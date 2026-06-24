@@ -1,6 +1,7 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { CitaService } from '../../services/cita.service';
 import { MascotaService } from '../../services/mascota.service';
 import { VeterinarioService } from '../../services/veterinario.service';
@@ -20,6 +21,7 @@ export class ClientTurnosComponent implements OnInit {
   private mascotaService = inject(MascotaService);
   private veterinarioService = inject(VeterinarioService);
   private servicioService = inject(ServicioService);
+  private route = inject(ActivatedRoute);
 
   citas: CitaResponse[] = [];
   mascotas: MascotaResponse[] = [];
@@ -94,6 +96,7 @@ export class ClientTurnosComponent implements OnInit {
       next: (data) => {
         this.veterinarios = (data || []).filter(v => v.activo);
         this.loadingVets = false;
+        this.checkQueryParams();
       },
       error: (err) => {
         console.error('Error cargando veterinarios', err);
@@ -106,9 +109,48 @@ export class ClientTurnosComponent implements OnInit {
     this.servicioService.listarTodos().subscribe({
       next: (data) => {
         this.servicios = data || [];
+        this.checkQueryParams();
       },
       error: (err) => console.error('Error cargando servicios', err)
     });
+  }
+
+  checkQueryParams(): void {
+    if (this.veterinarios.length === 0 || this.servicios.length === 0) return;
+
+    const vetIdParam = this.route.snapshot.queryParams['vetId'];
+    const tipoCitaParam = this.route.snapshot.queryParams['tipoCita'];
+
+    if (vetIdParam) {
+      const vetId = parseInt(vetIdParam, 10);
+      
+      let matchingService = null;
+      if (tipoCitaParam) {
+        matchingService = this.servicios.find(s => {
+          const nameLower = s.nombre.toLowerCase();
+          const tipoLower = tipoCitaParam.toLowerCase();
+          return nameLower.includes(tipoLower) || tipoLower.includes(nameLower) ||
+                 (tipoLower === 'consulta' && nameLower.includes('consulta')) ||
+                 (tipoLower === 'vacunacion' && nameLower.includes('vacun')) ||
+                 (tipoLower === 'cirugia' && nameLower.includes('cirug')) ||
+                 (tipoLower === 'grooming' && nameLower.includes('groom'));
+        });
+      }
+
+      if (!matchingService) {
+        matchingService = this.servicios.find(s => s.veterinarios.some(v => v.id === vetId));
+      }
+
+      if (matchingService) {
+        this.servicioSeleccionado = matchingService;
+        this.onServicioChange();
+
+        const matchingVet = this.veterinariosFiltrados.find(v => v.id === vetId);
+        if (matchingVet) {
+          this.seleccionarDoctor(matchingVet);
+        }
+      }
+    }
   }
 
   onServicioChange(): void {

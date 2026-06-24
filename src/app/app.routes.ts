@@ -25,6 +25,7 @@ import { DoctorInternacionesComponent } from './pages/doctor-internaciones/docto
 import { DoctorInventarioComponent } from './pages/doctor-inventario/doctor-inventario.component';
 import { DoctorSolicitudesComponent } from './pages/doctor-solicitudes/doctor-solicitudes.component';
 import { DoctorAgendaComponent } from './pages/doctor-agenda/doctor-agenda.component';
+import { adminGuard, doctorGuard, clienteGuard, publicGuard } from './core/guards/auth.guard';
 
 export const routes: Routes = [
   { 
@@ -33,15 +34,18 @@ export const routes: Routes = [
   },
   {
     path: 'login',
-    component: LoginComponent
+    component: LoginComponent,
+    canActivate: [publicGuard]
   },
   {
     path: 'register',
-    component: RegisterComponent
+    component: RegisterComponent,
+    canActivate: [publicGuard]
   },
   { 
     path: 'cliente', 
     component: DashboardLayoutComponent,
+    canActivate: [clienteGuard],
     children: [
       { path: '', component: ClientHomeComponent, pathMatch: 'full' },
       { path: 'productos', component: ProductListComponent },
@@ -55,6 +59,7 @@ export const routes: Routes = [
   {
     path: 'admin',
     component: AdminLayoutComponent,
+    canActivate: [adminGuard],
     children: [
       { path: '', component: AdminHomeComponent, pathMatch: 'full' },
       { path: 'productos', component: AdminProductosComponent },
@@ -68,6 +73,7 @@ export const routes: Routes = [
   {
     path: 'doctor',
     component: DoctorLayoutComponent,
+    canActivate: [doctorGuard],
     children: [
       { path: '', component: DoctorHomeComponent, pathMatch: 'full' },
       { path: 'agenda', component: DoctorAgendaComponent },
@@ -79,3 +85,4 @@ export const routes: Routes = [
   },
   { path: '**', redirectTo: '' }
 ];
+

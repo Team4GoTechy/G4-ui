@@ -21,5 +21,6 @@ export interface CitaResponse {
   duracionMinutos: number;
   estado: string;
   notas: string;
+  motivoCancelacion?: string;
   pagado?: boolean;
 }

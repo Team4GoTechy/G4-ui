@@ -17,6 +17,39 @@ import { gsap } from 'gsap';
   template: `
     <div class="max-w-7xl mx-auto my-8 px-4 sm:px-6 lg:px-8 font-nunito flex flex-col gap-6">
       
+      <!-- Banners de Turno Cancelado por Veterinario (Reprogramable) -->
+      <ng-container *ngFor="let alert of canceledDoctorAlerts">
+        <div class="bg-amber-50 border-2 border-amber-200 rounded-3xl p-6 shadow-md flex flex-col sm:flex-row items-center justify-between gap-4 relative overflow-hidden group">
+          <div class="absolute top-0 right-0 w-24 h-24 bg-amber-100 rounded-full -mr-8 -mt-8 opacity-45 group-hover:scale-110 transition-transform duration-500 ease-out z-0"></div>
+          <div class="flex items-center gap-4 text-center sm:text-left z-10 flex-1">
+            <div class="bg-amber-100 text-amber-600 p-4 rounded-full flex items-center justify-center shrink-0">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </div>
+            <div>
+              <h4 class="text-base font-black text-amber-800 uppercase tracking-wide">⚠️ CITA CANCELADA POR EL VETERINARIO</h4>
+              <p class="text-sm text-amber-700 font-bold mt-1">
+                Lamentamos informarte que tu turno para <span class="text-amber-900 font-extrabold">{{ alert.mascotaNombre }}</span> con el 
+                Dr. <span class="text-amber-900 font-extrabold">{{ alert.veterinarioNombre }}</span> del día <span class="text-amber-900 font-extrabold">{{ alert.fechaHora | date:'dd/MM/yyyy HH:mm' }} hs</span> 
+                ha sido cancelado por inasistencia del médico.
+              </p>
+              <div class="mt-2 text-xs text-amber-600 font-bold bg-white/70 inline-block px-3 py-1.5 rounded-xl border border-amber-100/50" *ngIf="alert.motivoCancelacion">
+                📝 <span class="font-extrabold">Motivo:</span> {{ alert.motivoCancelacion }}
+              </div>
+            </div>
+          </div>
+          <div class="flex flex-col sm:flex-row gap-3 z-10 shrink-0">
+            <a [routerLink]="['/cliente/turnos']" [queryParams]="{ vetId: alert.veterinarioId, tipoCita: alert.tipoCita }" class="bg-amber-500 hover:bg-amber-600 text-white font-extrabold px-5 py-3 rounded-2xl shadow-sm transition-all text-xs text-center flex items-center justify-center gap-1.5">
+              📅 Reprogramar Turno
+            </a>
+            <button (click)="dismissCanceled(alert.id)" class="border-2 border-amber-300 hover:bg-amber-100 text-amber-700 font-extrabold px-4 py-3 rounded-2xl transition-all text-xs text-center">
+              Entendido
+            </button>
+          </div>
+        </div>
+      </ng-container>
+      
       <!-- Banners de Alerta URGENTE (Internación Activa) -->
       <ng-container *ngFor="let alert of activeHospitalAlerts">
         <div class="bg-red-50 border-2 border-red-200 rounded-3xl p-6 shadow-md flex flex-col sm:flex-row items-center justify-between gap-4 animate-pulse-slow">
@@ -367,6 +400,7 @@ export class ClientHomeComponent implements OnInit {
   user$ = this.authService.currentUser$;
   activeHospitalAlerts: InternacionResponse[] = [];
   dischargeAlerts: InternacionResponse[] = [];
+  canceledDoctorAlerts: CitaResponse[] = [];
   
   misMascotas: MascotaResponse[] = [];
   mascotaSeleccionada: MascotaResponse | null = null;
@@ -438,6 +472,11 @@ export class ClientHomeComponent implements OnInit {
       next: (data) => {
         this.citas = data || [];
         this.loadingCitas = false;
+
+        // Filtrar alertas de inasistencia médica
+        const dismissed = this.getDismissedCanceled();
+        this.canceledDoctorAlerts = this.citas.filter(c => c.estado === 'CANCELADA_POR_MEDICO' && !dismissed.includes(c.id));
+
         this.generarCalendario();
         
         // Seleccionar hoy por defecto en el panel de detalles del calendario
@@ -587,7 +626,7 @@ export class ClientHomeComponent implements OnInit {
     const dStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     return this.citas.filter(c => {
       const cDateStr = c.fechaHora.split('T')[0];
-      return cDateStr === dStr && c.estado !== 'CANCELADA';
+      return cDateStr === dStr && c.estado !== 'CANCELADA' && c.estado !== 'CANCELADA_POR_MEDICO';
     });
   }
 
@@ -646,6 +685,20 @@ export class ClientHomeComponent implements OnInit {
       localStorage.setItem('dismissed_discharges', JSON.stringify(dismissed));
     }
     this.dischargeAlerts = this.dischargeAlerts.filter(d => d.id !== id);
+  }
+
+  getDismissedCanceled(): number[] {
+    const data = localStorage.getItem('dismissed_canceled_citas');
+    return data ? JSON.parse(data) : [];
+  }
+
+  dismissCanceled(id: number) {
+    const dismissed = this.getDismissedCanceled();
+    if (!dismissed.includes(id)) {
+      dismissed.push(id);
+      localStorage.setItem('dismissed_canceled_citas', JSON.stringify(dismissed));
+    }
+    this.canceledDoctorAlerts = this.canceledDoctorAlerts.filter(c => c.id !== id);
   }
 
   getAvatarUrl(avatar?: string): string {
