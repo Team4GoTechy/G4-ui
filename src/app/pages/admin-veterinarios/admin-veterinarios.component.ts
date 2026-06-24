@@ -482,6 +482,29 @@ import { forkJoin } from 'rxjs';
         </div>
       </div>
     </div>
+
+    <!-- Reusable Custom Confirmation Modal -->
+    <div *ngIf="isConfirmModalOpen" class="fixed inset-0 z-[100] flex items-center justify-center p-4">
+      <div class="absolute inset-0 bg-slate-900/50 backdrop-blur-md confirm-modal-backdrop" (click)="cerrarConfirmModal()"></div>
+      <div class="relative bg-white rounded-[2rem] shadow-2xl w-full max-w-sm p-6 text-center border border-slate-100/50 confirm-modal-content">
+        <div class="w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center text-3xl bg-rose-50 text-rose-500 shadow-inner border border-rose-100 animate-pulse">
+          🗑️
+        </div>
+        <h3 class="text-xl font-extrabold text-slate-800 mb-2">{{ confirmModalConfig.title }}</h3>
+        <p class="text-slate-500 text-sm font-medium mb-6 leading-relaxed">{{ confirmModalConfig.message }}</p>
+        
+        <div class="flex gap-3">
+          <button type="button" (click)="cerrarConfirmModal()" 
+                  class="flex-1 py-3 text-slate-500 hover:bg-slate-50 font-bold rounded-xl border border-slate-150 transition-colors cursor-pointer text-sm">
+            Volver
+          </button>
+          <button type="button" (click)="ejecutarAccionConfirmada()"
+                  class="flex-1 text-white font-extrabold py-3 rounded-xl shadow-md transition-colors cursor-pointer text-sm bg-rose-500 hover:bg-rose-600 active:scale-97">
+            Confirmar
+          </button>
+        </div>
+      </div>
+    </div>
   `
 })
 export class AdminVeterinariosComponent implements OnInit {
@@ -498,6 +521,14 @@ export class AdminVeterinariosComponent implements OnInit {
   showDetailsModal = false;
   isEditing = false;
   selectedVet?: VeterinarioResponse;
+
+  // Custom Confirm Modal State
+  isConfirmModalOpen = false;
+  confirmModalConfig = {
+    title: '',
+    message: '',
+    action: () => {}
+  };
 
   // Perfil Vet Form
   vetForm!: FormGroup;
@@ -650,18 +681,23 @@ export class AdminVeterinariosComponent implements OnInit {
   }
 
   eliminarVet(vet: VeterinarioResponse) {
-    if (confirm(`¿Estás seguro de que deseas dar de baja al veterinario ${vet.nombreCompleto}? (Su perfil se inactivará)`)) {
-      this.service.eliminar(vet.id).subscribe({
-        next: () => {
-          toast.success(`Veterinario ${vet.nombreCompleto} dado de baja.`);
-          this.cargarVeterinarios();
-        },
-        error: (err) => {
-          console.error(err);
-          toast.error('Error al dar de baja el veterinario.');
-        }
-      });
-    }
+    this.confirmModalConfig = {
+      title: '¿Dar de baja al Veterinario?',
+      message: `¿Estás seguro de que deseas dar de baja al veterinario ${vet.nombreCompleto}? Su perfil se inactivará y ya no se listará para agendar turnos.`,
+      action: () => {
+        this.service.eliminar(vet.id).subscribe({
+          next: () => {
+            toast.success(`Veterinario ${vet.nombreCompleto} dado de baja.`);
+            this.cargarVeterinarios();
+          },
+          error: (err) => {
+            console.error(err);
+            toast.error('Error al dar de baja el veterinario.');
+          }
+        });
+      }
+    };
+    this.abrirConfirmModal();
   }
 
   // ================= HORARIOS =================
@@ -783,21 +819,59 @@ export class AdminVeterinariosComponent implements OnInit {
 
   eliminarBloqueo(bloqueoId: number) {
     if (!this.selectedVet) return;
-    if (confirm('¿Deseas eliminar este bloqueo de fecha? El veterinario volverá a estar disponible.')) {
-      this.service.eliminarBloqueo(this.selectedVet.id, bloqueoId).subscribe({
-        next: () => {
-          toast.success('Bloqueo eliminado exitosamente.');
-          this.cargarBloqueos();
-          if (this.showDetailsModal && this.selectedVet) {
-            this.refreshDetailsData(this.selectedVet);
+    this.confirmModalConfig = {
+      title: '¿Eliminar bloqueo de fecha?',
+      message: '¿Deseas eliminar este bloqueo de fecha? El veterinario volverá a estar disponible en este horario.',
+      action: () => {
+        this.service.eliminarBloqueo(this.selectedVet!.id, bloqueoId).subscribe({
+          next: () => {
+            toast.success('Bloqueo eliminado exitosamente.');
+            this.cargarBloqueos();
+            if (this.showDetailsModal && this.selectedVet) {
+              this.refreshDetailsData(this.selectedVet);
+            }
+          },
+          error: (err) => {
+            console.error(err);
+            toast.error('Error al eliminar el bloqueo.');
           }
-        },
-        error: (err) => {
-          console.error(err);
-          toast.error('Error al eliminar el bloqueo.');
-        }
-      });
-    }
+        });
+      }
+    };
+    this.abrirConfirmModal();
+  }
+
+  abrirConfirmModal() {
+    this.isConfirmModalOpen = true;
+    setTimeout(() => {
+      gsap.fromTo('.confirm-modal-backdrop', { opacity: 0 }, { opacity: 1, duration: 0.2 });
+      gsap.fromTo('.confirm-modal-content', 
+        { scale: 0.9, y: 30, opacity: 0 }, 
+        { scale: 1, y: 0, opacity: 1, duration: 0.3, ease: 'back.out(1.2)' }
+      );
+    }, 10);
+  }
+
+  cerrarConfirmModal() {
+    gsap.to('.confirm-modal-content', { 
+      scale: 0.9, 
+      y: 30, 
+      opacity: 0, 
+      duration: 0.15, 
+      ease: 'power2.in' 
+    });
+    gsap.to('.confirm-modal-backdrop', { 
+      opacity: 0, 
+      duration: 0.15, 
+      onComplete: () => {
+        this.isConfirmModalOpen = false;
+      }
+    });
+  }
+
+  ejecutarAccionConfirmada() {
+    this.confirmModalConfig.action();
+    this.cerrarConfirmModal();
   }
 
   // ================= DETALLES DE VETERINARIO =================

@@ -1,18 +1,19 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, Router } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../services/auth.service';
 import { CitaService } from '../../services/cita.service';
 import { InternacionService } from '../../services/internacion.service';
 import { CitaResponse } from '../../models/cita.model';
 import { InternacionResponse } from '../../models/internacion.model';
 import { gsap } from 'gsap';
-import Swal from 'sweetalert2';
+import { toast } from 'ngx-sonner';
 
 @Component({
   selector: 'app-doctor-home',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, FormsModule],
   template: `
     <div class="max-w-7xl mx-auto my-8 px-4 sm:px-6 lg:px-8 font-nunito flex flex-col gap-6">
       
@@ -59,7 +60,7 @@ import Swal from 'sweetalert2';
             </ng-template>
           </div>
 
-          <div *ngIf="siguienteCita" class="w-full md:w-auto shrink-0 z-10">
+          <div class="w-full md:w-auto shrink-0 z-10" *ngIf="siguienteCita">
             <button (click)="iniciarConsulta(siguienteCita)" class="w-full text-center bg-white hover:bg-emerald-50 text-emerald-700 font-black py-3 px-6 rounded-2xl transition-all shadow-md text-sm whitespace-nowrap">
               Atender Cita
             </button>
@@ -114,6 +115,9 @@ import Swal from 'sweetalert2';
                     <h4 class="font-extrabold text-slate-800 text-sm mt-1">Paciente: {{ cita.mascotaNombre }}</h4>
                     <p class="text-[10px] text-slate-500 font-bold">Dueño: {{ cita.clienteNombre }} • Práctica: {{ cita.tipoCita }}</p>
                     <p class="text-xs text-slate-400 italic mt-2" *ngIf="cita.notas">Nota: {{ cita.notas }}</p>
+                    <p class="text-xs text-rose-500 font-bold mt-1" *ngIf="cita.estado === 'CANCELADA_POR_MEDICO' && cita.motivoCancelacion">
+                      Motivo inasistencia: {{ cita.motivoCancelacion }}
+                    </p>
                   </div>
                 </div>
                 
@@ -214,6 +218,70 @@ import Swal from 'sweetalert2';
 
       </div>
     </div>
+
+    <!-- Reusable Custom Confirmation/Cancellation Modal -->
+    <div *ngIf="isCancelModalOpen" class="fixed inset-0 z-[100] flex items-center justify-center p-4">
+      <div class="absolute inset-0 bg-slate-900/50 backdrop-blur-md cancel-modal-backdrop" (click)="cerrarCancelModal()"></div>
+      <div class="relative bg-white rounded-[2rem] shadow-2xl w-full max-w-md p-8 text-center border border-emerald-50/50 cancel-modal-content">
+        
+        <!-- Step 1: Type Selection -->
+        <div *ngIf="cancelStep === 'type'" class="type-content-step flex flex-col items-center">
+          <div class="w-20 h-20 rounded-full bg-amber-50 text-amber-500 mb-6 flex items-center justify-center text-4xl shadow-inner border border-amber-100 animate-pulse">
+            ⚠️
+          </div>
+          <h3 class="text-2xl font-black text-emerald-950 mb-3">¿Cómo deseas cancelar este turno?</h3>
+          <p class="text-slate-500 text-sm font-bold mb-8 leading-relaxed">
+            Elegí si la cita se cancela por tu inasistencia (lo que le permitirá al cliente reprogramarla) o si es una cancelación regular por inasistencia del cliente.
+          </p>
+          
+          <div class="flex flex-col gap-3 w-full">
+            <button type="button" (click)="irAPasoMotivo()" 
+                    class="w-full bg-rose-500 hover:bg-rose-600 active:scale-[0.97] text-white font-extrabold py-4 px-6 rounded-2xl shadow-md shadow-rose-100 hover:shadow-lg transition-all cursor-pointer text-sm">
+              🧑‍⚕️ Médico ausente (Reprogramable)
+            </button>
+            <button type="button" (click)="ejecutarCancelacionEstandar()"
+                    class="w-full bg-amber-500 hover:bg-amber-600 active:scale-[0.97] text-white font-extrabold py-4 px-6 rounded-2xl shadow-md shadow-amber-100 hover:shadow-lg transition-all cursor-pointer text-sm">
+              👤 Cancelación regular (Cliente)
+            </button>
+            <button type="button" (click)="cerrarCancelModal()" 
+                    class="w-full mt-2 py-3.5 text-slate-500 hover:bg-slate-100 font-black rounded-2xl border border-slate-100 transition-colors cursor-pointer text-sm">
+              Volver
+            </button>
+          </div>
+        </div>
+
+        <!-- Step 2: Reason Input -->
+        <div *ngIf="cancelStep === 'reason'" class="reason-content-step flex flex-col items-center">
+          <div class="w-20 h-20 rounded-full bg-rose-50 text-rose-500 mb-6 flex items-center justify-center text-4xl shadow-inner border border-rose-100">
+            📝
+          </div>
+          <h3 class="text-2xl font-black text-emerald-950 mb-2">Motivo de la inasistencia</h3>
+          <p class="text-slate-500 text-sm font-bold mb-6">
+            Escribí una justificación para el cliente. Se le notificará y mostrará en su pantalla de inicio al iniciar sesión.
+          </p>
+          
+          <div class="w-full mb-6 text-left">
+            <input type="text" [(ngModel)]="cancelReason" placeholder="Ej: Urgencia médica, enfermedad, imprevisto..."
+                   class="w-full px-5 py-4 bg-slate-50 border-2 border-slate-200 rounded-2xl font-bold text-slate-700 placeholder-slate-400 focus:outline-none focus:border-emerald-500 focus:bg-white transition-all text-sm" />
+            <p *ngIf="isReasonTouched && !cancelReason.trim()" class="text-xs text-rose-500 font-extrabold mt-2 pl-2">
+              * Debes ingresar un motivo para justificar la inasistencia.
+            </p>
+          </div>
+          
+          <div class="flex gap-3 w-full">
+            <button type="button" (click)="volverAPasoTipo()" 
+                    class="flex-1 py-4 text-slate-500 hover:bg-slate-100 font-black rounded-2xl border border-slate-100 transition-colors cursor-pointer text-sm">
+              Atrás
+            </button>
+            <button type="button" (click)="ejecutarCancelacionPorMedico()"
+                    class="flex-1 bg-rose-500 hover:bg-rose-600 active:scale-[0.97] text-white font-extrabold py-4 rounded-2xl shadow-md shadow-rose-100 hover:shadow-lg transition-colors cursor-pointer text-sm">
+              Confirmar
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
   `,
   styles: [`
     .timeline-line {
@@ -246,6 +314,13 @@ export class DoctorHomeComponent implements OnInit {
   activeHospitalizations: InternacionResponse[] = [];
   siguienteCita: CitaResponse | null = null;
 
+  // Custom Modal State
+  isCancelModalOpen = false;
+  cancelStep: 'type' | 'reason' = 'type';
+  cancelCitaId: number | null = null;
+  cancelReason = '';
+  isReasonTouched = false;
+
   // Stats for charts
   weeklyCitasCount = [0, 0, 0, 0, 0]; // Lunes a Viernes
   practiceTypes = [
@@ -268,6 +343,16 @@ export class DoctorHomeComponent implements OnInit {
     this.citaService.obtenerAgendaDia(this.user.id, todayStr).subscribe({
       next: (data) => {
         this.citasHoy = data || [];
+
+        // Modificación pedida: auto-cancelar si ya pasó la hora del turno y no se atendió
+        const now = new Date();
+        this.citasHoy.forEach(c => {
+          const cDate = new Date(c.fechaHora);
+          if (cDate < now && (c.estado === 'PENDIENTE' || c.estado === 'CONFIRMADA')) {
+            c.estado = 'CANCELADA_POR_MEDICO';
+            c.motivoCancelacion = c.motivoCancelacion || 'El turno expiró sin registrar atención médica.';
+          }
+        });
         
         // Contar citas pendientes de hoy
         this.citasPendientesCount = this.citasHoy.filter(c => c.estado === 'PENDIENTE').length;
@@ -366,102 +451,101 @@ export class DoctorHomeComponent implements OnInit {
   confirmarCita(id: number) {
     this.citaService.actualizarEstado(id, 'CONFIRMADA').subscribe({
       next: () => {
-        Swal.fire({
-          icon: 'success',
-          title: 'Turno Confirmado',
-          text: 'Se ha confirmado la cita y se notificó al cliente.',
-          timer: 2000,
-          showConfirmButton: false,
-          customClass: {
-            popup: 'rounded-3xl font-nunito shadow-xl'
-          }
+        toast.success('Turno Confirmado', {
+          description: 'Se ha confirmado la cita y se notificó al cliente.'
         });
         this.cargarDatosDashboard();
       },
-      error: (err) => console.error('Error al confirmar cita', err)
+      error: (err) => {
+        console.error('Error al confirmar cita', err);
+        toast.error('No se pudo confirmar el turno');
+      }
     });
   }
 
   cancelarCita(id: number) {
-    Swal.fire({
-      title: '¿Cómo deseas cancelar este turno?',
-      icon: 'warning',
-      showCancelButton: true,
-      showDenyButton: true,
-      confirmButtonColor: '#ef4444',
-      denyButtonColor: '#f59e0b',
-      cancelButtonColor: '#94a3b8',
-      confirmButtonText: 'Médico ausente (Reprogramable)',
-      denyButtonText: 'Cancelación regular (Cliente)',
-      cancelButtonText: 'Volver',
-      customClass: {
-        popup: 'rounded-3xl font-nunito shadow-xl',
-        confirmButton: 'rounded-xl font-bold px-4 py-2.5 text-xs',
-        denyButton: 'rounded-xl font-bold px-4 py-2.5 text-xs',
-        cancelButton: 'rounded-xl font-bold px-4 py-2.5 text-xs'
+    this.cancelCitaId = id;
+    this.cancelStep = 'type';
+    this.cancelReason = '';
+    this.isReasonTouched = false;
+    this.isCancelModalOpen = true;
+    
+    setTimeout(() => {
+      gsap.fromTo('.cancel-modal-backdrop', { opacity: 0 }, { opacity: 1, duration: 0.2 });
+      gsap.fromTo('.cancel-modal-content', 
+        { scale: 0.9, y: 30, opacity: 0 }, 
+        { scale: 1, y: 0, opacity: 1, duration: 0.3, ease: 'back.out(1.2)' }
+      );
+    }, 10);
+  }
+
+  cerrarCancelModal() {
+    gsap.to('.cancel-modal-content', { 
+      scale: 0.9, 
+      y: 30, 
+      opacity: 0, 
+      duration: 0.15, 
+      ease: 'power2.in' 
+    });
+    gsap.to('.cancel-modal-backdrop', { 
+      opacity: 0, 
+      duration: 0.15, 
+      onComplete: () => {
+        this.isCancelModalOpen = false;
+        this.cancelCitaId = null;
+        this.cancelReason = '';
+        this.isReasonTouched = false;
       }
-    }).then((result) => {
-      if (result.isConfirmed) {
-        // Veterinario no asiste (CANCELADA_POR_MEDICO)
-        Swal.fire({
-          title: 'Motivo de la inasistencia',
-          input: 'text',
-          inputPlaceholder: 'Ej: Urgencia médica, enfermedad, imprevisto...',
-          showCancelButton: true,
-          confirmButtonColor: '#ef4444',
-          cancelButtonColor: '#94a3b8',
-          confirmButtonText: 'Confirmar cancelación',
-          cancelButtonText: 'Volver',
-          inputValidator: (value) => {
-            if (!value) {
-              return '¡Debes escribir un motivo!';
-            }
-            return null;
-          },
-          customClass: {
-            popup: 'rounded-3xl font-nunito shadow-xl',
-            confirmButton: 'rounded-xl font-bold px-6 py-2.5',
-            cancelButton: 'rounded-xl font-bold px-6 py-2.5'
-          }
-        }).then((motivoResult) => {
-          if (motivoResult.isConfirmed) {
-            const motivo = motivoResult.value;
-            this.citaService.actualizarEstado(id, 'CANCELADA_POR_MEDICO', motivo).subscribe({
-              next: () => {
-                Swal.fire({
-                  icon: 'success',
-                  title: 'Turno Cancelado',
-                  text: 'Se canceló el turno y se notificó al cliente para que pueda reprogramar.',
-                  timer: 2500,
-                  showConfirmButton: false,
-                  customClass: {
-                    popup: 'rounded-3xl font-nunito shadow-xl'
-                  }
-                });
-                this.cargarDatosDashboard();
-              },
-              error: (err) => console.error('Error al cancelar cita por inasistencia médica', err)
-            });
-          }
-        });
-      } else if (result.isDenied) {
-        // Cancelación estándar (CANCELADA)
-        this.citaService.actualizarEstado(id, 'CANCELADA').subscribe({
-          next: () => {
-            Swal.fire({
-              icon: 'success',
-              title: 'Turno Cancelado',
-              text: 'Se ha cancelado la cita correctamente.',
-              timer: 2000,
-              showConfirmButton: false,
-              customClass: {
-                popup: 'rounded-3xl font-nunito shadow-xl'
-              }
-            });
-            this.cargarDatosDashboard();
-          },
-          error: (err) => console.error('Error al cancelar cita', err)
-        });
+    });
+  }
+
+  irAPasoMotivo() {
+    this.cancelStep = 'reason';
+    setTimeout(() => {
+      gsap.fromTo('.reason-content-step', { opacity: 0, x: 20 }, { opacity: 1, x: 0, duration: 0.25 });
+    }, 10);
+  }
+
+  volverAPasoTipo() {
+    this.cancelStep = 'type';
+    setTimeout(() => {
+      gsap.fromTo('.type-content-step', { opacity: 0, x: -20 }, { opacity: 1, x: 0, duration: 0.25 });
+    }, 10);
+  }
+
+  ejecutarCancelacionEstandar() {
+    if (!this.cancelCitaId) return;
+    this.citaService.actualizarEstado(this.cancelCitaId, 'CANCELADA').subscribe({
+      next: () => {
+        toast.success('Turno cancelado correctamente');
+        this.cerrarCancelModal();
+        this.cargarDatosDashboard();
+      },
+      error: (err) => {
+        console.error('Error al cancelar cita', err);
+        toast.error('No se pudo cancelar el turno');
+        this.cerrarCancelModal();
+      }
+    });
+  }
+
+  ejecutarCancelacionPorMedico() {
+    this.isReasonTouched = true;
+    if (!this.cancelCitaId) return;
+    if (!this.cancelReason.trim()) {
+      return;
+    }
+
+    this.citaService.actualizarEstado(this.cancelCitaId, 'CANCELADA_POR_MEDICO', this.cancelReason).subscribe({
+      next: () => {
+        toast.success('Turno cancelado por inasistencia médica');
+        this.cerrarCancelModal();
+        this.cargarDatosDashboard();
+      },
+      error: (err) => {
+        console.error('Error al cancelar cita por inasistencia médica', err);
+        toast.error('No se pudo cancelar el turno');
+        this.cerrarCancelModal();
       }
     });
   }

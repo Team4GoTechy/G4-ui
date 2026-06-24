@@ -473,6 +473,16 @@ export class ClientHomeComponent implements OnInit {
         this.citas = data || [];
         this.loadingCitas = false;
 
+        // Auto-cálculo de inasistencias médicas por expiración de tiempo
+        const now = new Date();
+        this.citas.forEach(c => {
+          const cDate = new Date(c.fechaHora);
+          if (cDate < now && (c.estado === 'PENDIENTE' || c.estado === 'CONFIRMADA')) {
+            c.estado = 'CANCELADA_POR_MEDICO';
+            c.motivoCancelacion = c.motivoCancelacion || 'El turno programado expiró sin registrar atención médica.';
+          }
+        });
+
         // Filtrar alertas de inasistencia médica
         const dismissed = this.getDismissedCanceled();
         this.canceledDoctorAlerts = this.citas.filter(c => c.estado === 'CANCELADA_POR_MEDICO' && !dismissed.includes(c.id));
@@ -624,9 +634,12 @@ export class ClientHomeComponent implements OnInit {
 
   getAppointmentsForDate(d: Date): any[] {
     const dStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    const now = new Date();
     return this.citas.filter(c => {
+      const cDate = new Date(c.fechaHora);
+      const isExpired = (cDate < now) && (c.estado === 'PENDIENTE' || c.estado === 'CONFIRMADA');
       const cDateStr = c.fechaHora.split('T')[0];
-      return cDateStr === dStr && c.estado !== 'CANCELADA' && c.estado !== 'CANCELADA_POR_MEDICO';
+      return cDateStr === dStr && c.estado !== 'CANCELADA' && c.estado !== 'CANCELADA_POR_MEDICO' && !isExpired;
     });
   }
 

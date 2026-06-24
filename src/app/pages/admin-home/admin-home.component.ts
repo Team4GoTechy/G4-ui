@@ -1,7 +1,7 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink, Router } from '@angular/router';
+import { RouterLink } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { ProductService } from '../../services/product.service';
 import { SolicitudReposicionService } from '../../services/solicitud-reposicion.service';
@@ -12,7 +12,7 @@ import { Proveedor } from '../../models/proveedor.model';
 import { StockInsumoResponse } from '../../models/insumo.model';
 import { forkJoin } from 'rxjs';
 import { gsap } from 'gsap';
-import Swal from 'sweetalert2';
+import { toast } from 'ngx-sonner';
 
 @Component({
   selector: 'app-admin-home',
@@ -23,350 +23,293 @@ import Swal from 'sweetalert2';
       
       <!-- Welcome Header -->
       <div class="bg-gradient-to-r from-slate-900 to-slate-800 rounded-3xl p-8 text-white shadow-xl relative overflow-hidden group">
-        <div class="absolute -right-10 -bottom-10 w-48 h-48 rounded-full bg-sky-500/10 group-hover:scale-110 transition-transform duration-500 ease-out z-0"></div>
-        <div class="absolute right-20 -top-10 w-32 h-32 rounded-full bg-indigo-500/10 group-hover:scale-110 transition-transform duration-500 ease-out z-0"></div>
-        <div class="relative z-10 flex flex-col md:flex-row justify-between items-center gap-6">
-          <div>
-            <h1 class="text-3xl font-black">Hola, {{ user?.nombre }} 👋</h1>
-            <p class="text-slate-300 font-bold mt-1 text-sm">Resumen financiero y operativo de la clínica en tiempo real.</p>
-          </div>
-          <div class="flex gap-3 w-full md:w-auto">
-            <a routerLink="/admin/productos" class="flex-1 md:flex-initial text-center bg-sky-500 hover:bg-sky-600 text-white font-extrabold py-3 px-6 rounded-2xl shadow-md transition-all text-sm whitespace-nowrap">
-              📦 Gestionar Inventario
-            </a>
-            <a routerLink="/admin/solicitudes" class="flex-1 md:flex-initial text-center border border-slate-700 bg-slate-800/40 hover:bg-slate-800 text-slate-200 font-extrabold py-3 px-6 rounded-2xl transition-all text-sm whitespace-nowrap">
-              📥 Ver Bandeja
-            </a>
-          </div>
+        <div class="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-10 -mt-10 opacity-50 group-hover:scale-110 transition-transform duration-500 ease-out z-0"></div>
+        <div class="relative z-10">
+          <h1 class="text-3xl font-black">Panel de Administración 🛠️</h1>
+          <p class="text-slate-300 font-bold mt-1">Hola, {{ user?.nombre }} {{ user?.apellido }} • Administrador de la veterinaria</p>
         </div>
       </div>
 
-      <!-- Loading State -->
-      <div *ngIf="cargando" class="flex flex-col items-center justify-center py-20 bg-white rounded-3xl border border-gray-100 shadow-sm">
-        <div class="animate-spin rounded-full h-12 w-12 border-4 border-sky-100 border-t-sky-500 mb-4"></div>
-        <p class="text-slate-500 font-bold">Cargando inteligencia de negocios...</p>
-      </div>
-
-      <!-- Main Dashboard Grid -->
-      <div *ngIf="!cargando" class="flex flex-col gap-6">
+      <!-- Bento Grid (KPIs) -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         
-        <!-- KPIs Row -->
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-          
-          <div class="bento-card bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex flex-col justify-between">
-            <div>
-              <div class="w-12 h-12 bg-sky-100 text-sky-500 rounded-2xl flex items-center justify-center mb-4 text-xl">
-                💵
-              </div>
-              <h3 class="text-slate-500 font-bold text-xs uppercase tracking-wider">Ventas de Hoy</h3>
-              <p class="text-3xl font-black text-slate-800 mt-1">\${{ ventasHoy | number:'1.2-2' }}</p>
-            </div>
-            <p class="text-emerald-500 text-xs font-bold mt-2">↑ 12% vs promedio diario</p>
+        <!-- KPI 1: Ventas del día -->
+        <div class="bento-card bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex flex-col justify-between relative overflow-hidden group">
+          <div class="absolute -right-6 -bottom-6 w-20 h-20 bg-emerald-50 rounded-full group-hover:scale-110 transition-transform duration-500 z-0"></div>
+          <div class="z-10">
+            <span class="text-xs uppercase font-extrabold text-slate-400 tracking-wider">Ventas de Hoy</span>
+            <h2 class="text-3xl font-black text-slate-800 mt-2">\${{ ventasHoy | number:'1.2-2' }}</h2>
           </div>
-          
-          <div class="bento-card bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex flex-col justify-between">
-            <div>
-              <div class="w-12 h-12 bg-orange-100 text-orange-500 rounded-2xl flex items-center justify-center mb-4 text-xl">
-                🛍️
-              </div>
-              <h3 class="text-slate-500 font-bold text-xs uppercase tracking-wider">Pedidos Tienda</h3>
-              <p class="text-3xl font-black text-slate-800 mt-1">{{ pedidosHoyCount }}</p>
-            </div>
-            <p class="text-slate-400 text-xs font-bold mt-2">{{ pedidosPendientes }} pedidos pendientes</p>
+          <p class="text-xs text-emerald-600 font-extrabold mt-4 z-10 flex items-center gap-1">
+            🟢 Activo hoy
+          </p>
+        </div>
+
+        <!-- KPI 2: Pedidos del día -->
+        <div class="bento-card bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex flex-col justify-between relative overflow-hidden group">
+          <div class="absolute -right-6 -bottom-6 w-20 h-20 bg-sky-50 rounded-full group-hover:scale-110 transition-transform duration-500 z-0"></div>
+          <div class="z-10">
+            <span class="text-xs uppercase font-extrabold text-slate-400 tracking-wider">Pedidos Hoy</span>
+            <h2 class="text-3xl font-black text-slate-800 mt-2">{{ pedidosHoyCount }}</h2>
+          </div>
+          <p class="text-xs text-sky-600 font-extrabold mt-4 z-10">
+            📦 Compras registradas hoy
+          </p>
+        </div>
+
+        <!-- KPI 3: Clientes activos -->
+        <div class="bento-card bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex flex-col justify-between relative overflow-hidden group">
+          <div class="absolute -right-6 -bottom-6 w-20 h-20 bg-violet-50 rounded-full group-hover:scale-110 transition-transform duration-500 z-0"></div>
+          <div class="z-10">
+            <span class="text-xs uppercase font-extrabold text-slate-400 tracking-wider">Clientes Activos</span>
+            <h2 class="text-3xl font-black text-slate-800 mt-2">{{ clientesActivosCount }}</h2>
+          </div>
+          <p class="text-xs text-violet-600 font-extrabold mt-4 z-10">
+            👥 Usuarios tipo cliente
+          </p>
+        </div>
+
+        <!-- KPI 4: Solicitudes pendientes -->
+        <div class="bento-card bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex flex-col justify-between relative overflow-hidden group">
+          <div class="absolute -right-6 -bottom-6 w-20 h-20 bg-amber-50 rounded-full group-hover:scale-110 transition-transform duration-500 z-0"></div>
+          <div class="z-10">
+            <span class="text-xs uppercase font-extrabold text-slate-400 tracking-wider">Reposición Insumos</span>
+            <h2 class="text-3xl font-black text-slate-800 mt-2">{{ solicitudesPendientesCount }}</h2>
+          </div>
+          <p class="text-xs font-extrabold mt-4 z-10" [ngClass]="solicitudesPendientesCount > 0 ? 'text-amber-600 animate-pulse' : 'text-slate-400'">
+            ⚠️ {{ solicitudesPendientesCount > 0 ? 'Solicitudes pendientes de revisión' : 'Sin solicitudes pendientes' }}
+          </p>
+        </div>
+
+      </div>
+
+      <!-- Bento Grid (Gráficos y Tablas) -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <!-- Bento Card 5: Gráfico Ventas Semanales (Col-Span 2) -->
+        <div class="bento-card bg-white p-6 rounded-3xl border border-gray-100 shadow-sm lg:col-span-2 flex flex-col gap-4">
+          <div class="flex justify-between items-center pb-2 border-b border-slate-50">
+            <span class="text-xs uppercase font-extrabold text-slate-400 tracking-wider">Evolución de Ventas (Últimos 7 días)</span>
+            <span class="text-xs font-black text-emerald-600 bg-emerald-50 border border-emerald-100 px-3 py-1 rounded-full">Semanal</span>
           </div>
 
-          <div class="bento-card bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex flex-col justify-between">
-            <div>
-              <div class="w-12 h-12 bg-purple-100 text-purple-500 rounded-2xl flex items-center justify-center mb-4 text-xl">
-                👥
-              </div>
-              <h3 class="text-slate-500 font-bold text-xs uppercase tracking-wider">Clientes Activos</h3>
-              <p class="text-3xl font-black text-slate-800 mt-1">{{ clientesActivosCount }}</p>
-            </div>
-            <p class="text-emerald-500 text-xs font-bold mt-2">Total registrados en sistema</p>
-          </div>
+          <div class="flex-1 flex flex-col justify-center min-h-[220px]">
+            <div class="relative w-full h-44">
+              <!-- SVG Chart -->
+              <svg class="w-full h-full overflow-visible" viewBox="0 0 500 160" preserveAspectRatio="none">
+                <defs>
+                  <!-- Gradient for chart background fill -->
+                  <linearGradient id="admin-sales-grad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#10b981" stop-opacity="0.25"></stop>
+                    <stop offset="100%" stop-color="#10b981" stop-opacity="0.00"></stop>
+                  </linearGradient>
+                  
+                  <!-- Clip path for animated revealing -->
+                  <clipPath id="admin-chart-clip">
+                    <rect id="admin-sales-rect" x="0" y="0" width="500" height="160"></rect>
+                  </clipPath>
+                </defs>
 
-          <div class="bento-card bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex flex-col justify-between">
-            <div>
-              <div class="w-12 h-12 bg-rose-100 text-rose-500 rounded-2xl flex items-center justify-center mb-4 text-xl">
-                🩺
-              </div>
-              <h3 class="text-slate-500 font-bold text-xs uppercase tracking-wider">Peticiones Veterinarias</h3>
-              <p class="text-3xl font-black text-slate-800 mt-1">{{ solicitudesPendientesCount }}</p>
+                <!-- Grid Lines -->
+                <line x1="40" y1="30" x2="470" y2="30" stroke="#f1f5f9" stroke-width="1" stroke-dasharray="4"></line>
+                <line x1="40" y1="85" x2="470" y2="85" stroke="#f1f5f9" stroke-width="1" stroke-dasharray="4"></line>
+                <line x1="40" y1="140" x2="470" y2="140" stroke="#e2e8f0" stroke-width="1.5"></line>
+
+                <!-- Gradient Area Fill -->
+                <path *ngIf="chartGradientPath" [attr.d]="chartGradientPath" fill="url(#admin-sales-grad)" clip-path="url(#admin-chart-clip)"></path>
+
+                <!-- Line Path -->
+                <path *ngIf="chartPath" [attr.d]="chartPath" fill="none" stroke="#10b981" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" clip-path="url(#admin-chart-clip)"></path>
+
+                <!-- Data Dots -->
+                <g *ngFor="let dot of chartCoords">
+                  <circle [attr.cx]="dot.x" [attr.cy]="dot.y" r="5" fill="#ffffff" stroke="#10b981" stroke-width="2.5" class="admin-chart-dot origin-center transition-all duration-300 hover:r-7" [attr.title]="dot.val"></circle>
+                  <text [attr.x]="dot.x" [attr.y]="dot.y - 12" text-anchor="middle" class="text-[9px] font-black fill-slate-700 font-nunito">\${{ dot.val | number:'1.0-0' }}</text>
+                  <!-- X-Axis Labels -->
+                  <text [attr.x]="dot.x" y="155" text-anchor="middle" class="text-[9px] font-extrabold fill-slate-400 font-nunito">{{ dot.label }}</text>
+                </g>
+              </svg>
             </div>
-            <p class="text-rose-500 text-xs font-bold mt-2" *ngIf="solicitudesPendientesCount > 0">Requieren aprobación urgente</p>
-            <p class="text-slate-400 text-xs font-bold mt-2" *ngIf="solicitudesPendientesCount === 0">Al día sin pendientes</p>
           </div>
         </div>
 
-        <!-- Bento Grid Layout -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Bento Card 6: Pedidos por estado (Col-Span 1) -->
+        <div class="bento-card bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex flex-col gap-4">
+          <span class="text-xs uppercase font-extrabold text-slate-400 tracking-wider">Monitor de Pedidos</span>
           
-          <!-- Column-Span 2: Evolution Line Chart -->
-          <div class="bento-card bg-white p-6 rounded-3xl border border-gray-100 shadow-sm lg:col-span-2 flex flex-col gap-4">
-            <div class="flex justify-between items-center">
-              <span class="text-xs uppercase font-extrabold text-slate-400 tracking-wider">Desempeño E-Commerce</span>
-              <span class="text-xs font-black text-sky-500 uppercase tracking-widest bg-sky-50 border border-sky-100 px-3 py-1 rounded-full">
-                Ventas Semanales
-              </span>
+          <div class="flex-1 flex flex-col justify-center gap-3">
+            <div>
+              <div class="flex justify-between items-center text-[10px] font-extrabold text-slate-600 mb-1">
+                <span>Pendientes de confirmación</span>
+                <span>{{ pedidosPendientes }} ({{ pedidosTotal > 0 ? Math.round((pedidosPendientes/pedidosTotal)*100) : 0 }}%)</span>
+              </div>
+              <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                <div class="stat-progress-bar h-full rounded-full bg-amber-500" [style.width.%]="pedidosTotal > 0 ? (pedidosPendientes/pedidosTotal)*100 : 0"></div>
+              </div>
             </div>
 
-            <div class="flex-1 flex flex-col py-2">
-              <!-- SVG Chart -->
-              <div class="w-full h-52 relative bg-slate-50/30 rounded-2xl p-2 border border-slate-100 flex items-center justify-center overflow-hidden">
-                <svg viewBox="0 0 500 160" class="w-full h-full">
-                  <!-- Grids -->
-                  <line x1="40" y1="20" x2="470" y2="20" stroke="#f1f5f9" stroke-width="1"></line>
-                  <line x1="40" y1="60" x2="470" y2="60" stroke="#f1f5f9" stroke-width="1"></line>
-                  <line x1="40" y1="100" x2="470" y2="100" stroke="#f1f5f9" stroke-width="1"></line>
-                  <line x1="40" y1="140" x2="470" y2="140" stroke="#e2e8f0" stroke-width="1.5"></line>
+            <div>
+              <div class="flex justify-between items-center text-[10px] font-extrabold text-slate-600 mb-1">
+                <span>Confirmados (En armado)</span>
+                <span>{{ pedidosConfirmados }} ({{ pedidosTotal > 0 ? Math.round((pedidosConfirmados/pedidosTotal)*100) : 0 }}%)</span>
+              </div>
+              <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                <div class="stat-progress-bar h-full rounded-full bg-sky-500" [style.width.%]="pedidosTotal > 0 ? (pedidosConfirmados/pedidosTotal)*100 : 0"></div>
+              </div>
+            </div>
 
-                  <!-- Gradient & Clip Mask -->
-                  <defs>
-                    <linearGradient id="admin-sales-grad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stop-color="#0ea5e9" stop-opacity="0.25"></stop>
-                      <stop offset="100%" stop-color="#0ea5e9" stop-opacity="0.00"></stop>
-                    </linearGradient>
-                    <clipPath id="admin-sales-clip">
-                      <rect x="0" y="0" width="0" height="160" id="admin-sales-rect"></rect>
-                    </clipPath>
-                  </defs>
+            <div>
+              <div class="flex justify-between items-center text-[10px] font-extrabold text-slate-600 mb-1">
+                <span>Entregados</span>
+                <span>{{ pedidosEntregados }} ({{ pedidosTotal > 0 ? Math.round((pedidosEntregados/pedidosTotal)*100) : 0 }}%)</span>
+              </div>
+              <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                <div class="stat-progress-bar h-full rounded-full bg-emerald-500" [style.width.%]="pedidosTotal > 0 ? (pedidosEntregados/pedidosTotal)*100 : 0"></div>
+              </div>
+            </div>
 
-                  <!-- Gradient Fill -->
-                  <path [attr.d]="chartGradientPath" fill="url(#admin-sales-grad)" clip-path="url(#admin-sales-clip)"></path>
-
-                  <!-- Line -->
-                  <path [attr.d]="chartPath" fill="none" stroke="#0ea5e9" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" clip-path="url(#admin-sales-clip)"></path>
-
-                  <!-- Dots -->
-                  <g clip-path="url(#admin-sales-clip)">
-                    <circle *ngFor="let c of chartCoords" 
-                            [attr.cx]="c.x" 
-                            [attr.cy]="c.y" 
-                            r="4.5" 
-                            fill="#ffffff" 
-                            stroke="#0ea5e9" 
-                            stroke-width="2.5"
-                            class="admin-chart-dot origin-center transition-all duration-300 hover:r-6 cursor-pointer">
-                    </circle>
-                  </g>
-
-                  <!-- Labels -->
-                  <text *ngFor="let c of chartCoords" 
-                        [attr.x]="c.x" 
-                        y="152" 
-                        text-anchor="middle" 
-                        fill="#94a3b8" 
-                        font-size="8.5" 
-                        font-weight="bold">
-                    {{ c.label }}
-                  </text>
-
-                  <!-- Values above dots -->
-                  <text *ngFor="let c of chartCoords" 
-                        [attr.x]="c.x" 
-                        [attr.y]="c.y - 8" 
-                        text-anchor="middle" 
-                        fill="#334155" 
-                        font-size="8.5" 
-                        font-weight="black">
-                    \${{ c.val | number:'1.0-0' }}
-                  </text>
-                </svg>
+            <div>
+              <div class="flex justify-between items-center text-[10px] font-extrabold text-slate-600 mb-1">
+                <span>Cancelados</span>
+                <span>{{ pedidosCancelados }} ({{ pedidosTotal > 0 ? Math.round((pedidosCancelados/pedidosTotal)*100) : 0 }}%)</span>
+              </div>
+              <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                <div class="stat-progress-bar h-full rounded-full bg-rose-500" [style.width.%]="pedidosTotal > 0 ? (pedidosCancelados/pedidosTotal)*100 : 0"></div>
               </div>
             </div>
           </div>
+        </div>
 
-          <!-- Column-Span 1: Low Stock Alerts -->
-          <div class="bento-card bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex flex-col gap-4">
-            <div class="flex justify-between items-center border-b border-slate-50 pb-2">
-              <span class="text-xs uppercase font-extrabold text-slate-400 tracking-wider">Alertas de Inventario</span>
-              <span class="text-xs font-black text-rose-500 bg-rose-50 border border-rose-100 px-2 py-0.5 rounded-full">
-                {{ insumosCriticos.length }} Críticos
-              </span>
+        <!-- Bento Card 7: Solicitudes de Insumos (Col-Span 2) -->
+        <div class="bento-card bg-white p-6 rounded-3xl border border-gray-100 shadow-sm lg:col-span-2 flex flex-col gap-4">
+          <div class="flex justify-between items-center pb-2 border-b border-slate-50">
+            <span class="text-xs uppercase font-extrabold text-slate-400 tracking-wider">Solicitudes de Reposición de Insumos</span>
+            <span class="text-xs font-black text-amber-500 bg-amber-50 border border-amber-100 px-3 py-1 rounded-full">{{ solicitudesPendientes.length }} Pendientes</span>
+          </div>
+
+          <div class="flex-1 overflow-y-auto max-h-64 pr-1 custom-scrollbar">
+            <div *ngIf="solicitudesPendientes.length === 0" class="flex flex-col items-center justify-center py-12 text-slate-400 text-center">
+              <span class="text-3xl mb-1">✅</span>
+              <p class="text-xs font-bold">No hay solicitudes de reposición pendientes de aprobación.</p>
             </div>
 
-            <div class="flex-1 flex flex-col gap-3 overflow-y-auto max-h-[190px] pr-1 custom-scrollbar">
-              <div *ngIf="insumosCriticos.length === 0" class="flex flex-col items-center justify-center py-10 text-slate-400 text-center">
-                <span class="text-2xl mb-1">🎉</span>
-                <p class="text-xs font-bold text-slate-500">¡Excelente! Insumos al día sin faltantes.</p>
-              </div>
-
-              <div *ngFor="let ins of insumosCriticos" 
-                   class="p-3 rounded-2xl border border-rose-100 bg-rose-50/10 flex items-center justify-between gap-3 shadow-sm">
+            <div class="flex flex-col gap-3">
+              <div *ngFor="let sol of solicitudesPendientes" class="p-4 border border-slate-100 rounded-2xl bg-slate-50/20 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                 <div>
-                  <h4 class="font-extrabold text-slate-800 text-xs">{{ ins.nombreInsumo }}</h4>
-                  <p class="text-[9px] text-rose-500 font-bold mt-0.5">
-                    Stock: {{ ins.cantidadActual }} {{ ins.unidadMedida }} (Mín: {{ ins.stockMinimo }})
+                  <span class="text-[9px] font-black uppercase text-amber-600 bg-amber-50 border border-amber-100 px-2 py-0.5 rounded-full">Pendiente</span>
+                  <h4 class="font-extrabold text-slate-800 text-sm mt-1.5">Insumos solicitados:</h4>
+                  <ul class="list-disc list-inside text-[10px] text-slate-600 font-bold mt-1">
+                    <li *ngFor="let det of sol.detalles">
+                      {{ det.nombreInsumo }} (x{{ det.cantidadSolicitada }})
+                    </li>
+                  </ul>
+                  <p class="text-[9px] text-slate-400 mt-2 font-bold">
+                    Solicitado por: {{ sol.nombreVeterinario }} • Fecha: {{ sol.fechaCreacion | date:'dd/MM/yyyy HH:mm' }}
                   </p>
                 </div>
-                <a routerLink="/admin/insumos" class="bg-rose-500 hover:bg-rose-600 text-white font-extrabold text-[9px] px-3 py-2 rounded-xl transition-all shadow-sm whitespace-nowrap">
-                  Reponer
-                </a>
+                
+                <div class="flex gap-2 w-full sm:w-auto justify-end">
+                  <button (click)="abrirAprobarModal(sol)" class="bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-white font-extrabold text-[10px] px-3.5 py-2 rounded-xl transition-all shadow-sm cursor-pointer">
+                    Aprobar compra
+                  </button>
+                  <button (click)="cancelarSolicitud(sol.id)" class="border border-rose-200 hover:bg-rose-50 text-rose-500 font-extrabold text-[10px] px-3 py-2 rounded-xl transition-all cursor-pointer">
+                    Rechazar
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-
         </div>
 
-        <!-- Row 3: Solicitudes Table & breakdown -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          
-          <!-- Column-Span 2: Pending Supply Requests -->
-          <div class="bento-card bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden lg:col-span-2 flex flex-col">
-            <div class="p-6 border-b border-gray-50 flex justify-between items-center bg-slate-50/40">
-              <h3 class="text-lg font-black text-slate-850">Solicitudes de Reposición Pendientes</h3>
-              <a routerLink="/admin/solicitudes" class="text-sky-500 font-extrabold text-xs hover:underline">Ir a la bandeja</a>
-            </div>
-
-            <div class="overflow-x-auto flex-1 max-h-[280px] custom-scrollbar">
-              <table class="w-full text-left border-collapse">
-                <thead>
-                  <tr class="bg-slate-50 text-slate-500 text-[10px] uppercase tracking-wider border-b border-gray-100">
-                    <th class="p-4 font-bold">Solicitante</th>
-                    <th class="p-4 font-bold">Fecha</th>
-                    <th class="p-4 font-bold">Detalle de Solicitud</th>
-                    <th class="p-4 font-bold text-center">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody class="text-xs font-semibold">
-                  <tr *ngFor="let sol of solicitudesPendientes" class="border-b border-gray-50 hover:bg-slate-50/50 transition-colors">
-                    <td class="p-4">
-                      <p class="font-extrabold text-slate-800">{{ sol.nombreVeterinario }}</p>
-                      <p class="text-[9px] text-slate-400">Dr. ID: {{ sol.veterinarioId }}</p>
-                    </td>
-                    <td class="p-4 text-slate-500">
-                      {{ sol.fechaCreacion | date:'dd/MM/yyyy HH:mm' }}
-                    </td>
-                    <td class="p-4">
-                      <div class="space-y-0.5">
-                        <div *ngFor="let d of sol.detalles" class="text-slate-650 flex items-center gap-1.5">
-                          <span class="font-black text-slate-800 bg-slate-100 px-1 rounded">{{ d.cantidadSolicitada }}</span>
-                          {{ d.nombreInsumo }}
-                        </div>
-                      </div>
-                    </td>
-                    <td class="p-4">
-                      <div class="flex gap-2 justify-center">
-                        <button (click)="abrirAprobarModal(sol)" class="bg-emerald-500 hover:bg-emerald-600 text-white font-extrabold text-[10px] px-3.5 py-1.5 rounded-xl transition-all shadow-sm shadow-emerald-50">
-                          Aprobar
-                        </button>
-                        <button (click)="cancelarSolicitud(sol.id)" class="border border-red-200 hover:bg-red-50 text-red-500 font-extrabold text-[10px] px-3.5 py-1.5 rounded-xl transition-all">
-                          Rechazar
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-
-                  <tr *ngIf="solicitudesPendientes.length === 0">
-                    <td colspan="4" class="p-16 text-center text-slate-450 font-bold">
-                      No hay solicitudes de reabastecimiento pendientes de revisión.
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
+        <!-- Bento Card 8: Insumos con Alerta Crítica (Col-Span 1) -->
+        <div class="bento-card bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex flex-col gap-4">
+          <div class="flex justify-between items-center pb-2 border-b border-slate-50">
+            <span class="text-xs uppercase font-extrabold text-slate-400 tracking-wider">Stock Crítico Veterinario</span>
+            <span class="text-xs font-black text-rose-500 bg-rose-50 border border-rose-100 px-2.5 py-0.5 rounded-full">{{ insumosCriticos.length }} Alertas</span>
           </div>
 
-          <!-- Column-Span 1: Order Status Breakdown -->
-          <div class="bento-card bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex flex-col gap-4">
-            <span class="text-xs uppercase font-extrabold text-slate-400 tracking-wider">Monitoreo de Despacho</span>
-            
-            <div class="flex-1 flex flex-col justify-center gap-3.5">
-              
-              <div>
-                <div class="flex justify-between items-center text-[10.5px] font-black text-slate-600 mb-1">
-                  <span>Entregados</span>
-                  <span>{{ pedidosEntregados }} / {{ pedidosTotal }}</span>
-                </div>
-                <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
-                  <div class="stat-progress-bar h-full rounded-full bg-emerald-500" [style.width.%]="pedidosTotal > 0 ? (pedidosEntregados / pedidosTotal) * 100 : 0"></div>
-                </div>
-              </div>
+          <div class="flex-1 overflow-y-auto max-h-64 pr-1 custom-scrollbar">
+            <div *ngIf="insumosCriticos.length === 0" class="flex flex-col items-center justify-center py-12 text-slate-400 text-center">
+              <span class="text-2xl mb-1">📦</span>
+              <p class="text-xs font-bold text-slate-500">Todo en orden. No hay insumos en stock crítico.</p>
+            </div>
 
-              <div>
-                <div class="flex justify-between items-center text-[10.5px] font-black text-slate-600 mb-1">
-                  <span>Confirmados</span>
-                  <span>{{ pedidosConfirmados }} / {{ pedidosTotal }}</span>
+            <div class="flex flex-col gap-3">
+              <div *ngFor="let item of insumosCriticos" class="p-3 border border-rose-100 rounded-2xl bg-rose-50/10 shadow-sm flex items-center justify-between gap-3">
+                <div class="min-w-0">
+                  <h4 class="font-extrabold text-slate-800 text-xs truncate">{{ item.nombreInsumo }}</h4>
+                  <p class="text-[9px] text-slate-500 font-bold mt-0.5">
+                    Stock actual: <span class="text-rose-600 font-extrabold">{{ item.cantidadActual }}</span> • Mínimo: {{ item.stockMinimo }}
+                  </p>
                 </div>
-                <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
-                  <div class="stat-progress-bar h-full rounded-full bg-sky-500" [style.width.%]="pedidosTotal > 0 ? (pedidosConfirmados / pedidosTotal) * 100 : 0"></div>
-                </div>
+                <span class="text-[9px] font-black uppercase text-rose-600 bg-rose-50 border border-rose-100 px-2 py-0.5 rounded-full whitespace-nowrap">
+                  Crítico
+                </span>
               </div>
-
-              <div>
-                <div class="flex justify-between items-center text-[10.5px] font-black text-slate-600 mb-1">
-                  <span>Pendientes</span>
-                  <span>{{ pedidosPendientes }} / {{ pedidosTotal }}</span>
-                </div>
-                <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
-                  <div class="stat-progress-bar h-full rounded-full bg-amber-500" [style.width.%]="pedidosTotal > 0 ? (pedidosPendientes / pedidosTotal) * 100 : 0"></div>
-                </div>
-              </div>
-
-              <div>
-                <div class="flex justify-between items-center text-[10.5px] font-black text-slate-600 mb-1">
-                  <span>Cancelados</span>
-                  <span>{{ pedidosCancelados }} / {{ pedidosTotal }}</span>
-                </div>
-                <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
-                  <div class="stat-progress-bar h-full rounded-full bg-red-400" [style.width.%]="pedidosTotal > 0 ? (pedidosCancelados / pedidosTotal) * 100 : 0"></div>
-                </div>
-              </div>
-
             </div>
           </div>
-          
         </div>
 
       </div>
     </div>
 
-    <!-- Modal Seleccionar Proveedor para Aprobación -->
-    <div *ngIf="isAprobarModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" (click)="cerrarAprobarModal()"></div>
-      <div class="relative bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-zoom-in font-nunito">
-        
-        <div class="p-6 bg-slate-900 text-white flex justify-between items-center shrink-0">
-          <div>
-            <h3 class="text-lg font-black">Aprobar Solicitud #{{ solicitudSeleccionada?.id }}</h3>
-            <p class="text-slate-400 text-xs font-bold">Selecciona el proveedor de reposición autorizado</p>
-          </div>
-          <button (click)="cerrarAprobarModal()" class="text-slate-450 hover:text-white font-bold transition-colors">❌</button>
+    <!-- Modal para Aprobar y Seleccionar Proveedor -->
+    <div *ngIf="isAprobarModalOpen" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+      <div class="relative bg-white rounded-[2rem] w-full max-w-md p-8 shadow-2xl border border-emerald-50/50 animate-zoom-in">
+        <h3 class="text-2xl font-black text-slate-800 mb-2">Despachar Orden de Compra</h3>
+        <div class="text-xs text-slate-500 font-bold mb-6">
+          Aprobarás la solicitud de reposición de insumos de <span class="text-slate-800 font-extrabold">{{ solicitudSeleccionada?.nombreVeterinario }}</span>:
+          <ul class="list-disc list-inside mt-2 text-slate-700">
+            <li *ngFor="let det of solicitudSeleccionada?.detalles">
+              {{ det.nombreInsumo }} (x{{ det.cantidadSolicitada }})
+            </li>
+          </ul>
         </div>
 
-        <form (ngSubmit)="confirmarAprobacion()" class="p-6 space-y-4">
-          <div>
-            <label class="block text-xs uppercase font-extrabold text-slate-400 mb-1">Insumo a Reponer</label>
-            <div class="bg-gray-50 border border-gray-100 rounded-2xl p-3.5 text-xs font-black text-slate-700">
-              <div *ngFor="let item of solicitudSeleccionada?.detalles">
-                {{ item.nombreInsumo }} <span class="text-sky-500">x{{ item.cantidadSolicitada }}</span>
-              </div>
-            </div>
-          </div>
-
-          <div>
-            <label class="block text-xs uppercase font-extrabold text-slate-400 mb-1">Proveedor Autorizado <span class="text-red-500">*</span></label>
-            <select [(ngModel)]="proveedorSeleccionadoId" name="proveedorId" required
-                    class="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 outline-none focus:ring-2 focus:ring-sky-400 font-extrabold text-sm text-slate-700">
-              <option [ngValue]="0" disabled selected>Seleccione un proveedor...</option>
-              <option *ngFor="let prov of proveedores" [ngValue]="prov.id">
-                {{ prov.nombre }}
-              </option>
+        <form (ngSubmit)="confirmarAprobacion()">
+          <div class="mb-6">
+            <label class="block text-xs font-extrabold text-slate-400 uppercase tracking-wider mb-2">Selecciona Proveedor Autorizado</label>
+            <select [(ngModel)]="proveedorSeleccionadoId" name="proveedor" required
+                    class="w-full px-4 py-3.5 bg-slate-50 border-2 border-slate-200 rounded-xl font-bold text-slate-700 focus:outline-none focus:border-emerald-500 focus:bg-white transition-all text-sm">
+              <option value="0" disabled>-- Elige un proveedor --</option>
+              <option *ngFor="let p of proveedores" [value]="p.id">{{ p.nombre }} ({{ p.telefono || p.email || 'Sin contacto' }})</option>
             </select>
           </div>
 
-          <div class="pt-4 flex gap-3">
+          <div class="flex gap-3">
             <button type="button" (click)="cerrarAprobarModal()" 
-                    class="flex-1 py-3 text-gray-500 hover:bg-gray-50 font-bold rounded-2xl transition-colors border border-gray-100 text-sm">
+                    class="flex-1 py-3 text-gray-500 hover:bg-gray-50 font-bold rounded-2xl transition-colors border border-gray-100 text-sm cursor-pointer">
               Cancelar
             </button>
             <button type="submit" [disabled]="aprobando"
-                    class="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white font-black py-3 rounded-2xl shadow-md transition-colors disabled:opacity-50 text-sm">
+                    class="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white font-black py-3 rounded-2xl shadow-md transition-colors disabled:opacity-50 text-sm cursor-pointer">
               {{ aprobando ? 'Procesando...' : 'Aprobar y Comprar' }}
             </button>
           </div>
         </form>
+      </div>
+    </div>
+
+    <!-- Reusable Custom Confirmation Modal -->
+    <div *ngIf="isConfirmModalOpen" class="fixed inset-0 z-[100] flex items-center justify-center p-4">
+      <div class="absolute inset-0 bg-slate-900/50 backdrop-blur-md confirm-modal-backdrop" (click)="cerrarConfirmModal()"></div>
+      <div class="relative bg-white rounded-[2rem] shadow-2xl w-full max-w-sm p-6 text-center border border-slate-100/50 confirm-modal-content">
+        <div class="w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center text-3xl bg-rose-50 text-rose-500 shadow-inner border border-rose-100 animate-pulse">
+          🗑️
+        </div>
+        <h3 class="text-xl font-extrabold text-slate-800 mb-2">{{ confirmModalConfig.title }}</h3>
+        <p class="text-slate-500 text-sm font-medium mb-6 leading-relaxed">{{ confirmModalConfig.message }}</p>
+        
+        <div class="flex gap-3">
+          <button type="button" (click)="cerrarConfirmModal()" 
+                  class="flex-1 py-3 text-slate-500 hover:bg-slate-50 font-bold rounded-xl border border-slate-150 transition-colors cursor-pointer text-sm">
+            Volver
+          </button>
+          <button type="button" (click)="ejecutarAccionConfirmada()"
+                  class="flex-1 text-white font-extrabold py-3 rounded-xl shadow-md transition-colors cursor-pointer text-sm bg-rose-500 hover:bg-rose-600 active:scale-97">
+            Confirmar
+          </button>
+        </div>
       </div>
     </div>
   `,
@@ -399,6 +342,7 @@ export class AdminHomeComponent implements OnInit {
   private insumoService = inject(InsumoService);
   private proveedorService = inject(ProveedorService);
 
+  protected Math = Math;
   user = this.authService.getCurrentUser();
   cargando = true;
 
@@ -432,6 +376,14 @@ export class AdminHomeComponent implements OnInit {
   solicitudSeleccionada: SolicitudReposicionResponse | null = null;
   proveedorSeleccionadoId = 0;
   aprobando = false;
+
+  // Custom Confirm Modal State
+  isConfirmModalOpen = false;
+  confirmModalConfig = {
+    title: '',
+    message: '',
+    action: () => {}
+  };
 
   ngOnInit() {
     this.cargarDashboard();
@@ -576,11 +528,8 @@ export class AdminHomeComponent implements OnInit {
   confirmarAprobacion() {
     if (!this.solicitudSeleccionada) return;
     if (this.proveedorSeleccionadoId === 0) {
-      Swal.fire({
-        icon: 'error',
-        title: 'Error',
-        text: 'Por favor selecciona un proveedor autorizado para despachar la compra.',
-        customClass: { popup: 'rounded-3xl font-nunito shadow-xl' }
+      toast.error('Error de validación', {
+        description: 'Por favor selecciona un proveedor autorizado para despachar la compra.'
       });
       return;
     }
@@ -588,24 +537,16 @@ export class AdminHomeComponent implements OnInit {
     this.aprobando = true;
     this.solicitudService.aprobar(this.solicitudSeleccionada.id, this.proveedorSeleccionadoId).subscribe({
       next: () => {
-        Swal.fire({
-          icon: 'success',
-          title: 'Solicitud Aprobada',
-          text: 'La solicitud ha sido aprobada con éxito. Se emitió la orden de compra al proveedor.',
-          timer: 2500,
-          showConfirmButton: false,
-          customClass: { popup: 'rounded-3xl font-nunito shadow-xl' }
+        toast.success('Solicitud Aprobada', {
+          description: 'La solicitud ha sido aprobada con éxito. Se emitió la orden de compra al proveedor.'
         });
         this.cerrarAprobarModal();
         this.cargarDashboard();
       },
       error: (err) => {
         console.error('Error al aprobar solicitud de reposición', err);
-        Swal.fire({
-          icon: 'error',
-          title: 'Error',
-          text: err.error?.message || 'No se pudo aprobar la solicitud de insumo.',
-          customClass: { popup: 'rounded-3xl font-nunito shadow-xl' }
+        toast.error('Error', {
+          description: err.error?.message || 'No se pudo aprobar la solicitud de insumo.'
         });
         this.aprobando = false;
       }
@@ -613,46 +554,60 @@ export class AdminHomeComponent implements OnInit {
   }
 
   cancelarSolicitud(id: number) {
-    Swal.fire({
+    this.confirmModalConfig = {
       title: '¿Rechazar esta solicitud?',
-      text: 'Esta acción cancelará el pedido de insumo y no se podrá revertir.',
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: '#ef4444',
-      cancelButtonColor: '#94a3b8',
-      confirmButtonText: 'Sí, rechazar',
-      cancelButtonText: 'Volver',
-      customClass: {
-        popup: 'rounded-3xl font-nunito shadow-xl',
-        confirmButton: 'rounded-xl font-bold px-6 py-2.5',
-        cancelButton: 'rounded-xl font-bold px-6 py-2.5'
-      }
-    }).then((result) => {
-      if (result.isConfirmed) {
+      message: 'Esta acción cancelará el pedido de insumo y no se podrá revertir.',
+      action: () => {
         this.solicitudService.cancelar(id).subscribe({
           next: () => {
-            Swal.fire({
-              icon: 'success',
-              title: 'Solicitud Rechazada',
-              text: 'La solicitud ha sido cancelada correctamente.',
-              timer: 2000,
-              showConfirmButton: false,
-              customClass: { popup: 'rounded-3xl font-nunito shadow-xl' }
+            toast.success('Solicitud Rechazada', {
+              description: 'La solicitud ha sido cancelada correctamente.'
             });
             this.cargarDashboard();
           },
           error: (err) => {
             console.error('Error al rechazar solicitud', err);
-            Swal.fire({
-              icon: 'error',
-              title: 'Error',
-              text: err.error?.message || 'No se pudo rechazar la solicitud.',
-              customClass: { popup: 'rounded-3xl font-nunito shadow-xl' }
+            toast.error('Error', {
+              description: err.error?.message || 'No se pudo rechazar la solicitud.'
             });
           }
         });
       }
+    };
+    this.abrirConfirmModal();
+  }
+
+  abrirConfirmModal() {
+    this.isConfirmModalOpen = true;
+    setTimeout(() => {
+      gsap.fromTo('.confirm-modal-backdrop', { opacity: 0 }, { opacity: 1, duration: 0.2 });
+      gsap.fromTo('.confirm-modal-content', 
+        { scale: 0.9, y: 30, opacity: 0 }, 
+        { scale: 1, y: 0, opacity: 1, duration: 0.3, ease: 'back.out(1.2)' }
+      );
+    }, 10);
+  }
+
+  cerrarConfirmModal() {
+    gsap.to('.confirm-modal-content', { 
+      scale: 0.9, 
+      y: 30, 
+      opacity: 0, 
+      duration: 0.15, 
+      ease: 'power2.in' 
     });
+    gsap.to('.confirm-modal-backdrop', { 
+      opacity: 0, 
+      duration: 0.15, 
+      onComplete: () => {
+        this.isConfirmModalOpen = false;
+      }
+    });
+  }
+
+  ejecutarAccionConfirmada() {
+    this.confirmModalConfig.action();
+    this.cerrarConfirmModal();
   }
 
   // Animaciones GSAP
