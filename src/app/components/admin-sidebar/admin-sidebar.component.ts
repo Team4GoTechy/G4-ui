@@ -22,9 +22,7 @@ import { AuthService } from '../../services/auth.service';
 
         <!-- Logo -->
         <div class="p-6 border-b border-gray-50 flex items-center justify-center" [ngClass]="isCollapsed ? 'gap-0' : 'gap-3'">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-sky-400 shrink-0" viewBox="0 0 20 20" fill="currentColor">
-            <path fill-rule="evenodd" d="M10 2a4 4 0 00-4 4v1H5a1 1 0 00-.994.89l-1 9A1 1 0 004 18h12a1 1 0 00.994-1.11l-1-9A1 1 0 0015 7h-1V6a4 4 0 00-4-4zm2 5V6a2 2 0 10-4 0v1h4zm-6 3a1 1 0 112 0 1 1 0 01-2 0zm7-1a1 1 0 100 2 1 1 0 000-2z" clip-rule="evenodd" />
-          </svg>
+          <img src="/assets/images/logo/logo-pethouse.png" class="h-8 w-8 shrink-0 object-contain" alt="Pethouse Logo">
           <span *ngIf="!isCollapsed" class="text-2xl font-extrabold text-gray-800 tracking-wide">Gerencia</span>
         </div>
 
